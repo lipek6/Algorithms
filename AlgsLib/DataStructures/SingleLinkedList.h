@@ -6,12 +6,11 @@
     This code implements a single linked list.
 */
 
-#include <iostream>
 #include <stdexcept>
 #include <optional>
 
 template <typename T>
-class LinkedList
+class SingleLinkedList
 {
 private:
     struct Node
@@ -27,9 +26,36 @@ private:
     Node* end;
     size_t listSize;
 
-    public:
-    LinkedList() : begin(nullptr), end(nullptr), listSize(0) {}
-    ~LinkedList()
+public:
+    SingleLinkedList() : begin(nullptr), end(nullptr), listSize(0) {}
+    SingleLinkedList(const SingleLinkedList& source) : begin(nullptr), end(nullptr), listSize(0)
+    {
+        if(source.begin() == nullptr) return;
+
+        Node* auxPtr = source.begin;
+        while(auxPtr != nullptr)
+        {
+            this->push_back(auxPtr->data);
+            auxPtr = auxPtr->next;
+        }
+    }
+
+    SingleLinkedList& operator=(const SingleLinkedList& source)    // Remember that this func must return SingleLinkedList&, so we can do chain assignments and don't lose time making shallow useless copys
+    {
+        if(this == &source) return *this;
+
+        this->clear();
+
+        Node* auxPtr = source.begin;
+        while(auxPtr != nullptr)
+        {
+            this->push_back(auxPtr->data);
+            auxPtr = auxPtr->next;
+        }
+        return *this;
+    }
+
+    void clear()
     {
         if(begin == nullptr) return;
 
@@ -41,12 +67,19 @@ private:
             auxPtr = auxPtr->next;
         }
         delete begin;
-        return;
+        begin = nullptr;
+        end = nullptr;
+        listSize = 0;
+    }
+
+    ~SingleLinkedList()
+    {
+        clear();
     }
 
     bool empty() const
     {
-        if(begin == nullptr)
+        if(size == 0)
             return true;
         else
             return false;
@@ -62,7 +95,12 @@ private:
         if(pos == 0)
         {
             begin = new Node(newData, begin);
-            if
+            if(listSize == 0) end = begin;
+        }
+        else if(pos == listSize)
+        {
+            end->next = new Node(newData, nullptr);
+            end = end->next;
         }
         else
         {
@@ -72,8 +110,8 @@ private:
                 auxPtr = auxPtr->next;
             }
             auxPtr->next = new Node(newData, auxPtr->next);
-            if(auxPtr == end) end = auxPtr->next;
         }
+        listSize++;
     }
 
     void remove(const size_t pos)
@@ -103,6 +141,58 @@ private:
         }  
 
         listSize--;
+    }
+
+    void push_back(const T &newData)
+    {
+        insert(newData, listSize);
+    }
+
+    void push_front(const T &newData)
+    {
+        insert(newData, 0);
+    }
+
+    T& front()
+    {
+        if(begin != nullptr)
+            return begin->data;
+        else
+            throw std::out_of_range("Empty list");
+    }
+
+    const T& front() const
+    {
+        if(begin != nullptr)
+            return begin->data;
+        else
+            throw std::out_of_range("Empty list");
+    }
+
+    T& back()
+    {
+        if(end != nullptr)
+            return end->data;
+        else
+            throw std::out_of_range("Empty list");
+    }
+
+    const T& back() const
+    {
+        if(end != nullptr)
+            return end->data;
+        else
+            throw std::out_of_range("Empty list");
+    }
+
+    void pop_back()
+    {
+        remove(listSize-1);
+    }
+
+    void pop_front()
+    {
+        remove(0);
     }
 
     std::optional<size_t> find(const T &target) const
@@ -138,28 +228,3 @@ private:
         return auxPtr->data;
     }
 };
-
-
-
-
-
-
-
-
-int main(void)
-{
-    LinkedList<std::string> list;
-
-    list.insert("Felipe", 0);
-    list.insert("Sara", 0);
-    list.insert("Fernanda", 0);
-    list.insert("Ferreira", 10);
-    list.insert("Augusto", 1);
-    std::cout << list[0] << " " << list[1] << " " << list[2] << std::endl;    
-    list.remove(0);
-    list.remove(0);
-    list.remove(10);
-    list.remove(1);
-
-    return 0;    
-}
