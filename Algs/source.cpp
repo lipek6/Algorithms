@@ -80,7 +80,7 @@ public:
             auxPtr1 = auxPtr1->next;
         }
         
-        if(auxPtr1->next != nullptr)
+        if(auxPtr1 != nullptr && auxPtr1->next != nullptr)
         {
             Node* auxPtr2 = auxPtr1->next;
             auxPtr1->next = auxPtr2->next;
