@@ -30,7 +30,7 @@ public:
     SingleLinkedList() : begin(nullptr), end(nullptr), listSize(0) {}
     SingleLinkedList(const SingleLinkedList& source) : begin(nullptr), end(nullptr), listSize(0)
     {
-        if(source.begin() == nullptr) return;
+        if(source.begin == nullptr) return;
 
         Node* auxPtr = source.begin;
         while(auxPtr != nullptr)
@@ -79,7 +79,7 @@ public:
 
     bool empty() const
     {
-        if(size == 0)
+        if(listSize == 0)
             return true;
         else
             return false;
@@ -214,7 +214,8 @@ public:
             return std::nullopt;
     }
 
-    T& operator[](const size_t pos)
+    // TODO: Add a const version of this guy below 
+    T& operator[](const size_t pos) 
     {
         if(pos >= listSize) throw std::out_of_range("Index out of range");
         
@@ -227,4 +228,26 @@ public:
         }        
         return auxPtr->data;
     }
+
+    // TODO: Take a look at move semantics "&&" to optimize this 
+    SingleLinkedList& operator+=(const SingleLinkedList& newNodes)
+    {
+        Node *auxPtr = newNodes.begin;
+        while(auxPtr != nullptr)
+        {
+            this->push_back(auxPtr->data);
+            auxPtr = auxPtr->next;
+        }
+        return *this;
+    }
+
+    // TODO: Take a look at move semantics "&&" to optimize this 
+    SingleLinkedList operator+(const SingleLinkedList& newNodes) const
+    {
+        SingleLinkedList<T> newList;
+        newList += *this;
+        newList += newNodes;
+        return newList;
+    }
 };
+
