@@ -6,13 +6,6 @@
 
 */
 
-/*
-Quick convention:
-- Functions and methods names shall start with a capital letter
-- Internal data names from objects shall start with a lowercase letter
-
-Check const correctness and reference usage.
-*/
 #include <iostream>
 #include <stdexcept>
 
@@ -39,16 +32,13 @@ public:
         if(begin == nullptr) return;
 
         Node* auxPtr = begin->next;
-
-        while(true)
+        while(auxPtr != nullptr)
         {
             delete begin;
-            begin  = auxPtr;
-
-            if(begin == nullptr) break;
-            
+            begin  = auxPtr;            
             auxPtr = auxPtr->next;
         }
+        delete begin;
         return;
     }
 
@@ -78,7 +68,7 @@ public:
         Node* auxPtr1 = begin;
         if(pos == 0)
         {
-            begin = auxPtr1->next;
+            begin = begin->next;
             delete auxPtr1;
             return;
         }
@@ -90,11 +80,12 @@ public:
             auxPtr1 = auxPtr1->next;
         }
         
-        if(auxPtr1->next == nullptr) return;
-
-        Node* auxPtr2 = auxPtr1->next;
-        auxPtr1->next = auxPtr2->next;
-        delete auxPtr2;
+        if(auxPtr1->next != nullptr)
+        {
+            Node* auxPtr2 = auxPtr1->next;
+            auxPtr1->next = auxPtr2->next;
+            delete auxPtr2;
+        }
         return;
     }
 
