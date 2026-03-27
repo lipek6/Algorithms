@@ -36,23 +36,17 @@ private:
         return auxPtr1;
     }
 
-    Node* minimum(Node* subtreeRoot = root)
-    {
-        if(subtreeRoot == nullptr) 
-            return nullptr;
-            
+    Node* minimum(Node* subtreeRoot)
+    {            
         while(subtreeRoot->left != nullptr)
         {
-            subtreeRoot = x->left;
+            subtreeRoot = subtreeRoot->left;
         }
         return subtreeRoot;
     }
 
-    Node* maximum(Node* subtreeRoot = root)
+    Node* maximum(Node* subtreeRoot)
     {
-        if(subtreeRoot == nullptr) 
-            return nullptr;
-
         while(subtreeRoot->right != nullptr)
         {
             subtreeRoot = subtreeRoot->right;
@@ -62,9 +56,6 @@ private:
 
     Node* successor(Node* node)
     {
-        if(node == nullptr) 
-            return nullptr;
-
         if(node->right != nullptr)
             return minimum(node->right);
 
@@ -72,16 +63,13 @@ private:
         while(auxPtr1 != nullptr && auxPtr1->right == node)
         {
             node = auxPtr1;
-            auxPtr1 = auxPtr1->parent
+            auxPtr1 = auxPtr1->parent;
         }
         return auxPtr1;
     }
 
     Node* predecessor(Node* node)
     {
-        if(node == nullptr)
-            return nullptr;
-
         if(node->left != nullptr)
             return maximum(node->left);
 
@@ -94,14 +82,39 @@ private:
         return auxPtr1;
     }
 
+    void printInOrder(Node* subtreeRoot, std::ostream& stream)
+    {
+        if(subtreeRoot == nullptr) return;
+
+        printInOrder(subtreeRoot->left, stream);
+        stream << subtreeRoot->key << "\n";
+        printInOrder(subtreeRoot->right, stream);
+    }
+
+    void printPreOrder(Node* subtreeRoot, std::ostream& stream)
+    {
+        if(subtreeRoot == nullptr) return;
+
+        stream << subtreeRoot->key << "\n";
+        printPreOrder(subtreeRoot->left, stream);
+        printPreOrder(subtreeRoot->right, stream);
+    }
+    
+    void printPostOrder(Node* subtreeRoot, std::ostream& stream)
+    {
+        if(subtreeRoot == nullptr) return;
+        
+        printPostOrder(subtreeRoot->left, stream);
+        printPostOrder(subtreeRoot->right, stream);
+        stream << subtreeRoot->key << "\n";
+    }
 
     void transplant(){}
 
 public:
 
-    BinaryTree() : root(nullptr), numNodes(0), height(0){}
-    ~BinaryTree(){}
-
+    BinaryTree() : root(nullptr), numNodes(0) {}
+    ~BinaryTree(){}     // There is memory leak. should be fixed when I add a destructor
 
     void insert(const K& newKey, const D& newData)
     {
@@ -129,7 +142,6 @@ public:
                 auxPtr2->right = new Node(newKey, newData, auxPtr2, nullptr, nullptr);
         }
         numNodes++;
-        // HEIGTH NEEDS TO BE INCREMENTED 
     }
 
     D* search(const K& targetKey)
@@ -138,8 +150,7 @@ public:
         
         if(targetNode != nullptr)
             return &(targetNode->data);
-        else
-            return nullptr;
+        return nullptr;
     }
 
     D* minimum(const K& subtreeRootKey)
@@ -153,14 +164,46 @@ public:
         return &(minNode->data);
     }
 
+    D* minimum()
+    {
+        if(root == nullptr) return nullptr;
+        
+        Node* minNode = minimum(root);
+        if(minNode == nullptr) return nullptr;
+        
+        return &(minNode->data);
+    }
+
     D* maximum(const K& subtreeRootKey)
     {
-        return &(maximum(searchNode(subtreeRootKey))->data);
+        Node* targetNode = searchNode(subtreeRootKey);
+        if(targetNode == nullptr) return nullptr;
+
+        Node* maxNode = maximum(targetNode);
+        if(maxNode == nullptr) return nullptr;
+
+        return &(maxNode->data);
+    }
+
+    D* maximum()
+    {
+        if(root == nullptr) return nullptr;
+
+        Node* maxNode = maximum(root);
+        if(maxNode == nullptr) return nullptr;
+
+        return &(maxNode->data);
     }
 
     D* successor(const K& node)
     {
-        return &(successor(searchNode(node))->data);
+        Node* targetNode = searchNode(node);
+        if(targetNode == nullptr) return nullptr;
+
+        Node* succNode = successor(targetNode);
+        if(succNode == nullptr) return nullptr;
+
+        return &(succNode->data);
     }
 
     D* predecessor(const K& node)
@@ -174,20 +217,72 @@ public:
         return &(predNode->data);
     }
 
-    void printInOrder(std::ostream& stream, Node* subtreeRoot)
+    // TODO: I should add a version of these traverse functions that feeds a file stream, std::ofstream;
+    void printInOrder(const K& subtreeRootKey, std::ostream& stream = std::cout) { printInOrder(searchNode(subtreeRootKey), stream); }
+
+    void printInOrder(std::ostream& stream = std::cout) { printInOrder(root, stream); }
+
+    void printPreOrder(const K& subtreeRootKey, std::ostream& stream = std::cout) { printPreOrder(searchNode(subtreeRootKey), stream); }
+    
+    void printPreOrder(std::ostream& stream = std::cout) { printPreOrder(root, stream); }
+
+    void printPostOrder(const K& subtreeRootKey, std::ostream& stream = std::cout) { printPostOrder(searchNode(subtreeRootKey), stream);}
+
+    void printPostOrder(std::ostream& stream = std::cout) { printPostOrder(root, stream); }
+
+
+    void remove(const K& delKey)
     {
-        if(subtreeRoot == nullptr) return;
+        Node* delNode = searchNode(delKey);
 
-        printInOrder(stream, subtreeRoot->left);
-        stream << subtreeRoot;
-        printInOrder(stream, subtreeRoot->right);
-    }
+        if(delNode == nullptr) throw std::out_of_range("Key is not on the tree");
+
+        if(delNode->left == nullptr && delNode->right == nullptr)
+        {
+            if(root == delNode)
+                root = nullptr;
+            else if(delNode->parent->right->key == delKey)
+                delNode->parent->right = nullptr;
+            else
+                delNode->parent->left = nullptr;
+
+            delete delNode;
+        }
+        else if(delNode->left != nullptr && delNode->right != nullptr)
+        {
+            
+        }
+        else if(delNode->left != nullptr)
+        {
+            if(root == delNode)
+                root = nullptr;
+            else if(delNode->parent->right->key == delKey)
+                delNode->parent->right = nullptr;
+            else
+                delNode->parent->left = nullptr;
+
+            remove(delNode->left);
+            delete delNode;
+        }
+        else
+        {
+            if(root == delNode)
+                root = nullptr;
+            else if(delNode->parent->right->key == delKey)
+                delNode->parent->right = nullptr;
+            else
+                delNode->parent->left = nullptr;
+
+            remove(delNode->right);
+            delete delNode;
+        }
 
 
+        // is a leaf: No children - easy
 
-    void remove(const T& delData)
-    {
-
+        // has a child
+        // has two children
+        numNodes--;
     }
 };
 
@@ -198,10 +293,14 @@ public:
 
 int main (void)
 {
-    BinaryTree<int> bt;
-    bt.insert(1);
-    bt.insert(2);
-    bt.insert(3);
-    bt.insert(5);
-    bt.insert(4);
+    BinaryTree<int, int> bt;
+    
+    int key;
+    while(std::cin >> key)
+    {
+        bt.insert(key, 0);
+    }    
+    bt.printPostOrder();
 }
+
+// 22 20 16 11 18 21 28 23 32 34 30 29
