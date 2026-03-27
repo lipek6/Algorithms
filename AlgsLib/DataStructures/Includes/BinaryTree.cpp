@@ -2,18 +2,19 @@
 #include <optional>
 #include <stdexcept>
 
-template <typename T>
+template <typename K, typename D>
 class BinaryTree
 {
 private:
     struct Node
     {
-        T data;
+        K key;
+        D data;
         Node* parent;
         Node* left;
-        Node* rigth;
+        Node* right;
 
-        Node(const T& data, Node* parent = nullptr, Node* left = nullptr, Node* rigth = nullptr) : data(data), parent(parent), left(left), rigth(rigth){}
+        Node(const K& key, const D& data, Node* parent = nullptr, Node* left = nullptr, Node* right = nullptr) : key(key), data(data), parent(parent), left(left), right(right){}
         ~Node(){}
     };
 
@@ -29,32 +30,50 @@ public:
     ~BinaryTree(){}
 
 
-    void insert(const T& newData)
+    void insert(const K& newKey, const D& newData)
     {
         if(numNodes == 0)
         {
-            root = new Node(newData, nullptr, nullptr, nullptr);
+            root = new Node(newKey, newData, nullptr, nullptr, nullptr);
         }
         else
         {
-            Node* auxPtr = root;
-            // Add another auxiliar node, it shall point to the node before auxPtr, because when auxPtr becomes nullptr, we can't go back to the parent of nullptr via the auxPtr.
-            while(auxPtr != nullptr)
+            Node* auxPtr1 = root;
+            Node* auxPtr2 = root;
+
+            while(auxPtr1 != nullptr)
             {
-                if (newData <= auxPtr->data)
-                    auxPtr = auxPtr->left;
+                auxPtr2 = auxPtr1;
+                if (newKey <= auxPtr1->key)
+                    auxPtr1 = auxPtr1->left;
                 else
-                    auxPtr = auxPtr->rigth;
+                    auxPtr1 = auxPtr1->right;
             }
             
-            if(newData <= auxPtr->data)
-                auxPtr->left = new Node(newData, auxPtr, nullptr, nullptr);
+            if(newKey <= auxPtr2->key)
+                auxPtr2->left = new Node(newKey, newData, auxPtr2, nullptr, nullptr);
             else
-                auxPtr->rigth = new Node(newData, auxPtr, nullptr, nullptr);
+                auxPtr2->right = new Node(newKey, newData, auxPtr2, nullptr, nullptr);
         }
         numNodes++;
         // HEIGTH NEEDS TO BE INCREMENTED 
     }
+
+    D* search(const K& targetKey)
+    {
+        Node* auxPtr1 = root;
+        Node* auxPtr2 = root;
+
+        while(auxPtr1 != nullptr)
+        {
+            auxPtr2 = auxPtr1;
+            if(targetKey < auxPtr1->key)
+                auxPtr1 = auxPtr1->left;
+            else if()
+                auxPtr1 = auxPtr1->right;
+        }
+    }
+
 
     void remove(const T& delData)
     {
