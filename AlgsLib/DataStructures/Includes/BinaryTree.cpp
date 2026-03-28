@@ -237,51 +237,67 @@ public:
 
         if(delNode == nullptr) throw std::out_of_range("Key is not on the tree");
 
-        if(delNode->left == nullptr && delNode->right == nullptr)
-        {
-            if(root == delNode)
-                root = nullptr;
-            else if(delNode->parent->right->key == delKey)
-                delNode->parent->right = nullptr;
-            else
-                delNode->parent->left = nullptr;
+        if(delNode->left == nullptr)                                // No left child - 1 or 0 children
+        {            
+            if(delNode->right == nullptr)                           // No children
+            {
+                if(delNode->parent->right == delNode)
+                    delNode->parent->right = nullptr;
+                else
+                    delNode->parent->left = nullptr;
+            }
+            else                                                    // 1 child, right
+            {
+                if(delNode->parent->right == delNode)
+                    delNode->parent->right = delNode->right;
+                else
+                    delNode->parent->left  = delNode->right;
 
-            delete delNode;
+                delNode->right->parent = delNode->parent;
+            }
         }
-        else if(delNode->left != nullptr && delNode->right != nullptr)
+        else                                                    // Left child - 1 or 2 children
         {
-            
+            if(delNode->right == nullptr)                       // 1 child, left
+            {
+                if (delNode->parent->right == delNode)
+                    delNode->parent->right = delNode->left;
+                else
+                    delNode->parent->left = delNode->left;
+
+                delNode->left->parent = delNode->parent;
+            }
+            else                                                // 2 children
+            {
+                Node* successorNode = successor(delNode);
+
+                if(successorNode == delNode->right)
+                {
+                    if (delNode->parent->right == delNode)
+                        delNode->parent->right = successorNode;
+                    else
+                        delNode->parent->left = successorNode;
+
+                    successorNode->parent = delNode->parent;
+                    successorNode->left   = delNode->left;
+                }
+                else                                            // Successor is on the minimum of the right subtree.
+                {
+                    std::swap(successorNode, successorNode->right);
+                    
+                    successorNode->right  = delNode->right;
+                    successorNode->left   = delNode->left;
+                    successorNode->parent = delNode->parent;
+
+                    if(delNode->parent->right == delNode)
+                        delNode->parent->right = successorNode;
+                    else
+                        delNode->parent->left  = successorNode;
+                }
+            }
         }
-        else if(delNode->left != nullptr)
-        {
-            if(root == delNode)
-                root = nullptr;
-            else if(delNode->parent->right->key == delKey)
-                delNode->parent->right = nullptr;
-            else
-                delNode->parent->left = nullptr;
 
-            remove(delNode->left);
-            delete delNode;
-        }
-        else
-        {
-            if(root == delNode)
-                root = nullptr;
-            else if(delNode->parent->right->key == delKey)
-                delNode->parent->right = nullptr;
-            else
-                delNode->parent->left = nullptr;
-
-            remove(delNode->right);
-            delete delNode;
-        }
-
-
-        // is a leaf: No children - easy
-
-        // has a child
-        // has two children
+        delete delNode;
         numNodes--;
     }
 };
@@ -300,7 +316,16 @@ int main (void)
     {
         bt.insert(key, 0);
     }    
-    bt.printPostOrder();
-}
 
+    std::cin >> key;
+    bt.remove(key);
+    
+    bt.printPostOrder();
+ 
+
+
+
+
+}
+// 22 28 25 20 26 35 34 33 32 31 29 30 42 40 49;
 // 22 20 16 11 18 21 28 23 32 34 30 29
