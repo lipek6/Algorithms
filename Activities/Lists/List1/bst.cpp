@@ -1,5 +1,4 @@
 #include <iostream>
-#include <optional>
 #include <stdexcept>
 
 template <typename K, typename D>
@@ -294,16 +293,11 @@ public:
     bool empty() const{ return numNodes == 0; }
 };
 
-
-
-
-
-
-int main (void)
+int main()
 {
-    BinaryTree<size_t, char> bt;    
+    BinaryTree<int, char> bt;       // Strange... I can't use a size_t as key, even though the question says that all the numbers are positive
     
-    size_t key;
+    int key;
     while(std::cin >> key)
         bt.insert(key, ' ');
 
