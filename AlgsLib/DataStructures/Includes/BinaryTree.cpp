@@ -109,12 +109,42 @@ private:
         stream << subtreeRoot->key << "\n";
     }
 
-    void transplant(){}
+    void transplant(Node* subtreeRoot1, Node* subtreeRoot2)
+    {
+        if(subtreeRoot1->parent == nullptr)                     // If it is root, set root to subtreeRoot2
+            root = subtreeRoot2;
+        else if(subtreeRoot1->parent->left == subtreeRoot1)     // If it is left child, set parents left child to subtreeRoot2
+            subtreeRoot1->parent->left = subtreeRoot2;
+        else
+            subtreeRoot1->parent->right = subtreeRoot2;         // If it is right child, set parents right child to subtreeRoot2
+        
+        if(subtreeRoot2 != nullptr)                             // Set subtreeRoot2 parent if subtreeRoot2 is not null
+            subtreeRoot2->parent = subtreeRoot1->parent;
+    }
+
+    void clearRecursively(Node* delNode)            // Stack Overflow retarded
+    {
+        if(delNode != nullptr)
+        {
+            clearRecursively(delNode->left);
+            clearRecursively(delNode->right);
+            delete delNode;
+        }
+    }
+
+
 
 public:
-
+    // TODO: Add copy constructors for deep copy and maybe use some move constructors to make things faster (operator overloading would be cool too).
     BinaryTree() : root(nullptr), numNodes(0) {}
-    ~BinaryTree(){}     // There is memory leak. should be fixed when I add a destructor
+    ~BinaryTree() { clear(); }
+
+    void clear()
+    {
+        clearRecursively(root);
+        root = nullptr;
+        numNodes = 0;
+    }
 
     void insert(const K& newKey, const D& newData)
     {
@@ -230,76 +260,38 @@ public:
 
     void printPostOrder(std::ostream& stream = std::cout) { printPostOrder(root, stream); }
 
-
     void remove(const K& delKey)
     {
         Node* delNode = searchNode(delKey);
-
         if(delNode == nullptr) throw std::out_of_range("Key is not on the tree");
-
-        if(delNode->left == nullptr)                                // No left child - 1 or 0 children
-        {            
-            if(delNode->right == nullptr)                           // No children
-            {
-                if(delNode->parent->right == delNode)
-                    delNode->parent->right = nullptr;
-                else
-                    delNode->parent->left = nullptr;
-            }
-            else                                                    // 1 child, right
-            {
-                if(delNode->parent->right == delNode)
-                    delNode->parent->right = delNode->right;
-                else
-                    delNode->parent->left  = delNode->right;
-
-                delNode->right->parent = delNode->parent;
-            }
-        }
-        else                                                    // Left child - 1 or 2 children
+        
+        if(delNode->left == nullptr)           
         {
-            if(delNode->right == nullptr)                       // 1 child, left
+            transplant(delNode, delNode->right);
+        }                     
+        else if(delNode->right == nullptr)
+        {
+            transplant(delNode, delNode->left);
+        }
+        else
+        {
+            Node* successorNode = successor(delNode);
+            if(successorNode != delNode->right)
             {
-                if (delNode->parent->right == delNode)
-                    delNode->parent->right = delNode->left;
-                else
-                    delNode->parent->left = delNode->left;
-
-                delNode->left->parent = delNode->parent;
-            }
-            else                                                // 2 children
-            {
-                Node* successorNode = successor(delNode);
-
-                if(successorNode == delNode->right)
-                {
-                    if (delNode->parent->right == delNode)
-                        delNode->parent->right = successorNode;
-                    else
-                        delNode->parent->left = successorNode;
-
-                    successorNode->parent = delNode->parent;
-                    successorNode->left   = delNode->left;
-                }
-                else                                            // Successor is on the minimum of the right subtree.
-                {
-                    std::swap(successorNode, successorNode->right);
-                    
-                    successorNode->right  = delNode->right;
-                    successorNode->left   = delNode->left;
-                    successorNode->parent = delNode->parent;
-
-                    if(delNode->parent->right == delNode)
-                        delNode->parent->right = successorNode;
-                    else
-                        delNode->parent->left  = successorNode;
-                }
-            }
+                transplant(successorNode, successorNode->right);
+                successorNode->right = delNode->right;
+                successorNode->right->parent = successorNode;
+            }   
+            transplant(delNode, successorNode);
+            successorNode->left = delNode->left;
+            successorNode->left->parent = successorNode;
         }
 
         delete delNode;
         numNodes--;
     }
+
+    bool empty() const{ return numNodes == 0; }
 };
 
 
@@ -309,23 +301,11 @@ public:
 
 int main (void)
 {
-    BinaryTree<int, int> bt;
+    BinaryTree<size_t, char> bt;    
     
-    int key;
+    size_t key;
     while(std::cin >> key)
-    {
-        bt.insert(key, 0);
-    }    
+        bt.insert(key, ' ');
 
-    std::cin >> key;
-    bt.remove(key);
-    
     bt.printPostOrder();
- 
-
-
-
-
 }
-// 22 28 25 20 26 35 34 33 32 31 29 30 42 40 49;
-// 22 20 16 11 18 21 28 23 32 34 30 29
