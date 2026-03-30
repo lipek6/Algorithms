@@ -297,7 +297,7 @@ int main()
 {
     BinaryTree<int, char> bt;       // Strange... I can't use a size_t as key, even though the question says that all the numbers are positive
     
-    int key;
+    unsigned int key;
     while(std::cin >> key)
         bt.insert(key, ' ');
 

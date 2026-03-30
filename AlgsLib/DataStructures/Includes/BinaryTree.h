@@ -1,5 +1,4 @@
 #include <iostream>
-#include <optional>
 #include <stdexcept>
 
 template <typename K, typename D>
