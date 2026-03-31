@@ -1,5 +1,4 @@
 #include <iostream>
-#include <optional>
 #include <stdexcept>
 
 template <typename K, typename D>
@@ -293,19 +292,3 @@ public:
 
     bool empty() const{ return numNodes == 0; }
 };
-
-
-
-
-
-
-int main (void)
-{
-    BinaryTree<size_t, char> bt;    
-    
-    size_t key;
-    while(std::cin >> key)
-        bt.insert(key, ' ');
-
-    bt.printPostOrder();
-}
