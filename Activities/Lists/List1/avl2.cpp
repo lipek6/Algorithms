@@ -2,7 +2,6 @@
 #include <stdexcept>
 
 // Using 1 as the initial height of the nodes
-
 template <typename K, typename D>
 class BinaryTree_Avl
 {
@@ -23,7 +22,6 @@ private:
 
     Node* root;
     size_t numNodes;
-
 
     int getHeight(Node* node)
     {
@@ -60,7 +58,7 @@ private:
         if(leftRightNode != nullptr)
             leftRightNode->parent = unbalancedNode;
 
-        leftNode->right = unbalancedNode;
+        leftNode->parent = unbalancedNode->parent;
 
         if(unbalancedNode->parent == nullptr)
             root = leftNode;
@@ -76,13 +74,53 @@ private:
         updateHeight(leftNode);
     }
 
-    void leftRotate(Node* y)
+    void leftRotate(Node* unbalancedNode)
     {
+        Node* rightNode = unbalancedNode->right;
+        Node* rightLeftNode = rightNode->left;
 
+        unbalancedNode->right = rightLeftNode;
+
+        if(rightLeftNode != nullptr)
+            rightLeftNode->parent = unbalancedNode;
+        
+        rightNode->parent = unbalancedNode->parent;
+
+        if(unbalancedNode->parent == nullptr)
+            root = rightNode;
+        else if (unbalancedNode->parent->right == unbalancedNode)
+            unbalancedNode->parent->right = rightNode;
+        else
+            unbalancedNode->parent->left = rightNode;
+
+        rightNode->left = unbalancedNode;
+        unbalancedNode->parent = rightNode;
+
+        updateHeight(unbalancedNode);
+        updateHeight(rightNode);
     }
 
-    // Place we want to move, then node we want to move there
-    void transplant(Node* subtreeRoot1, Node* subtreeRoot2)     // Might need some changes on the AVL tree
+    void balance(Node* unbalancedNode)
+    {
+        if(unbalancedNode == nullptr) return;
+
+        updateHeight(unbalancedNode);
+        int balanceFactor = getBalanceFactor(unbalancedNode);
+        if(balanceFactor > 1)
+        {            
+            if(getBalanceFactor(unbalancedNode->right) < 0)             // ZigZag case - we will addapt it to a line
+                rightRotate(unbalancedNode->right);   
+            leftRotate(unbalancedNode);
+        }
+        else if(balanceFactor < -1)
+        {
+            if(getBalanceFactor(unbalancedNode->left) > 0)              // ZigZag case - we will addapt it to a line
+                leftRotate(unbalancedNode->left);
+            rightRotate(unbalancedNode);
+        }
+    }
+
+    void transplant(Node* subtreeRoot1, Node* subtreeRoot2)
     {
         if(subtreeRoot1->parent == nullptr)                     // If it is root, set root to subtreeRoot2
             root = subtreeRoot2;
@@ -197,8 +235,8 @@ private:
 
 public:
     // TODO: Add copy constructors for deep copy and maybe use some move constructors to make things faster (operator overloading would be cool too).
-    BinaryTree() : root(nullptr), numNodes(0) {}
-    ~BinaryTree() { clear(); }
+    BinaryTree_Avl() : root(nullptr), numNodes(0) {}
+    ~BinaryTree_Avl() { clear(); }
 
     void clear()
     {
@@ -207,11 +245,12 @@ public:
         numNodes = 0;
     }
 
-    void insert(const K& newKey, const D& newData) // Might need some changes on the AVL tree
+    void insert(const K& newKey, const D& newData)
     {
         if(numNodes == 0)
         {
             root = new Node(newKey, newData, nullptr, nullptr, nullptr);
+            numNodes++;
         }
         else
         {
@@ -231,8 +270,17 @@ public:
                 auxPtr2->left = new Node(newKey, newData, auxPtr2, nullptr, nullptr);
             else
                 auxPtr2->right = new Node(newKey, newData, auxPtr2, nullptr, nullptr);
+
+            // Balancing the tree
+            Node* backtracker = auxPtr2;
+            while(backtracker != nullptr)
+            {
+                balance(backtracker);
+                backtracker = backtracker->parent;
+            }
+
+            numNodes++;
         }
-        numNodes++;
     }
 
     D* search(const K& targetKey)
@@ -324,14 +372,18 @@ public:
     void remove(const K& delKey) // Might need some changes on the AVL tree
     {
         Node* delNode = searchNode(delKey);
+        Node* toBalanceNode = nullptr;
+
         if(delNode == nullptr) throw std::out_of_range("Key is not on the tree");
         
         if(delNode->left == nullptr)           
         {
+            toBalanceNode = delNode->parent;
             transplant(delNode, delNode->right);
         }                     
         else if(delNode->right == nullptr)
         {
+            toBalanceNode = delNode->parent;
             transplant(delNode, delNode->left);
         }
         else
@@ -339,18 +391,38 @@ public:
             Node* successorNode = successor(delNode);
             if(successorNode != delNode->right)
             {
+                toBalanceNode = successorNode->parent;
+
                 transplant(successorNode, successorNode->right);
                 successorNode->right = delNode->right;
                 successorNode->right->parent = successorNode;
-            }   
+            }
+            else
+                toBalanceNode = successorNode;
+
             transplant(delNode, successorNode);
             successorNode->left = delNode->left;
             successorNode->left->parent = successorNode;
         }
 
         delete delNode;
+        
+        while (toBalanceNode != nullptr)
+        {
+            balance(toBalanceNode);
+            toBalanceNode = toBalanceNode->parent;
+        }
+        
         numNodes--;
     }
-
+    
     bool empty() const{ return numNodes == 0; }
 };
+
+int main()
+{
+    BinaryTree_Avl<int, char> bt_avl;
+
+    for(int i = 1; i <= 6; i++)
+        bt_avl.insert(i, i);
+}

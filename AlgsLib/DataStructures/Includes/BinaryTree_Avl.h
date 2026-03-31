@@ -1,10 +1,6 @@
 #include <iostream>
 #include <stdexcept>
 
-// The idea is basically that, if my AVL tree rebalances itself at any moment,
-// that means that the given tree isn't AVL, because it triggered the balancing of the AVL tree.
-
-
 // Using 1 as the initial height of the nodes
 template <typename K, typename D>
 class BinaryTree_Avl
@@ -26,7 +22,6 @@ private:
 
     Node* root;
     size_t numNodes;
-    bool wasRebalancedBoolean;        // Will be used just for this question
 
     int getHeight(Node* node)
     {
@@ -112,15 +107,13 @@ private:
         updateHeight(unbalancedNode);
         int balanceFactor = getBalanceFactor(unbalancedNode);
         if(balanceFactor > 1)
-        {         
-            wasRebalancedBoolean = true;   
+        {            
             if(getBalanceFactor(unbalancedNode->right) < 0)             // ZigZag case - we will addapt it to a line
                 rightRotate(unbalancedNode->right);   
             leftRotate(unbalancedNode);
         }
         else if(balanceFactor < -1)
         {
-            wasRebalancedBoolean = true;
             if(getBalanceFactor(unbalancedNode->left) > 0)              // ZigZag case - we will addapt it to a line
                 leftRotate(unbalancedNode->left);
             rightRotate(unbalancedNode);
@@ -242,7 +235,7 @@ private:
 
 public:
     // TODO: Add copy constructors for deep copy and maybe use some move constructors to make things faster (operator overloading would be cool too).
-    BinaryTree_Avl() : root(nullptr), numNodes(0), wasRebalancedBoolean(false) {}
+    BinaryTree_Avl() : root(nullptr), numNodes(0) {}
     ~BinaryTree_Avl() { clear(); }
 
     void clear()
@@ -424,29 +417,4 @@ public:
     }
     
     bool empty() const{ return numNodes == 0; }
-
-    bool wasRebalanced() const { return wasRebalancedBoolean; }
 };
-
-int main()
-{
-    
-    int testCases; std::cin >> testCases;
-    while(testCases--)
-    {
-        BinaryTree_Avl<int, char> bt_avl;
-
-        int n; std::cin >> n;
-        while(n--)
-        {
-            int newNode; std::cin >> newNode;
-            
-            if(bt_avl.wasRebalanced() == false && newNode != -1)        // Don't need to insert nodes if the tree isn't AVL, so lets just read the inputs and ignore them. Also, fuck the non existing nodes (-1)
-                bt_avl.insert(newNode, ' ');
-        }
-        if(bt_avl.wasRebalanced())
-            std::cout << "F\n";
-        else
-            std::cout << "T\n";
-    }
-}
