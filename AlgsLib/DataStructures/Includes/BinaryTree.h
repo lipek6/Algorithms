@@ -13,12 +13,17 @@ private:
         Node* left;
         Node* right;
 
-        Node(const K& key, const D& data, Node* parent = nullptr, Node* left = nullptr, Node* right = nullptr) : key(key), data(data), parent(parent), left(left), right(right){}
+        Node(const K& key, const D& data, Node* parent = nullptr, Node* left = nullptr, Node* right = nullptr)
+            : key(key), data(data), parent(parent), left(left), right(right) {}
         ~Node(){}
     };
 
     Node* root;
     size_t numNodes;
+
+    // ==========================================
+    // INTERNAL NAVIGATION & SEARCH HELPERS
+    // ==========================================
 
     Node* searchNode(const K& targetKey)
     {
@@ -81,32 +86,9 @@ private:
         return auxPtr1;
     }
 
-    void printInOrder(Node* subtreeRoot, std::ostream& stream)
-    {
-        if(subtreeRoot == nullptr) return;
-
-        printInOrder(subtreeRoot->left, stream);
-        stream << subtreeRoot->key << "\n";
-        printInOrder(subtreeRoot->right, stream);
-    }
-
-    void printPreOrder(Node* subtreeRoot, std::ostream& stream)
-    {
-        if(subtreeRoot == nullptr) return;
-
-        stream << subtreeRoot->key << "\n";
-        printPreOrder(subtreeRoot->left, stream);
-        printPreOrder(subtreeRoot->right, stream);
-    }
-    
-    void printPostOrder(Node* subtreeRoot, std::ostream& stream)
-    {
-        if(subtreeRoot == nullptr) return;
-        
-        printPostOrder(subtreeRoot->left, stream);
-        printPostOrder(subtreeRoot->right, stream);
-        stream << subtreeRoot->key << "\n";
-    }
+    // ==========================================
+    // INTERNAL MODIFIER HELPERS
+    // ==========================================
 
     void transplant(Node* subtreeRoot1, Node* subtreeRoot2)
     {
@@ -121,8 +103,9 @@ private:
             subtreeRoot2->parent = subtreeRoot1->parent;
     }
 
-    void clearRecursively(Node* delNode)            // Stack Overflow retarded
+    void clearRecursively(Node* delNode)
     {
+        // Stack Overflow retarded function. Might be a problem for huge trees 
         if(delNode != nullptr)
         {
             clearRecursively(delNode->left);
@@ -131,47 +114,58 @@ private:
         }
     }
 
+    // ==========================================
+    // INTERNAL TRAVERSAL HELPERS
+    // ==========================================
 
+    void printInOrder(Node* subtreeRoot, std::ostream& stream)
+    {
+        // Stack Overflow retarded function. Might be a problem for huge trees 
+        if(subtreeRoot == nullptr) return;
+
+        printInOrder(subtreeRoot->left, stream);
+        stream << subtreeRoot->key << "\n";
+        printInOrder(subtreeRoot->right, stream);
+    }
+
+    void printPreOrder(Node* subtreeRoot, std::ostream& stream)
+    {
+        // Stack Overflow retarded function. Might be a problem for huge trees 
+        if(subtreeRoot == nullptr) return;
+
+        stream << subtreeRoot->key << "\n";
+        printPreOrder(subtreeRoot->left, stream);
+        printPreOrder(subtreeRoot->right, stream);
+    }
+    
+    void printPostOrder(Node* subtreeRoot, std::ostream& stream)
+    {
+        // Stack Overflow retarded function. Might be a problem for huge trees 
+        if(subtreeRoot == nullptr) return;
+        
+        printPostOrder(subtreeRoot->left, stream);
+        printPostOrder(subtreeRoot->right, stream);
+        stream << subtreeRoot->key << "\n";
+    }
 
 public:
-    // TODO: Add copy constructors for deep copy and maybe use some move constructors to make things faster (operator overloading would be cool too).
-    BinaryTree() : root(nullptr), numNodes(0) {}
+    // ==========================================
+    // CONSTRUCTORS & DESTRUCTORS 
+    // ==========================================
+    
+    BinaryTree() : root(nullptr), numNodes(0) {}                // TODO: Add copy constructors for deep copy and maybe use some move constructors to make things faster (operator overloading would be cool too).
     ~BinaryTree() { clear(); }
 
-    void clear()
-    {
-        clearRecursively(root);
-        root = nullptr;
-        numNodes = 0;
-    }
+    // ==========================================
+    // CAPACITY  
+    // ==========================================
 
-    void insert(const K& newKey, const D& newData)
-    {
-        if(numNodes == 0)
-        {
-            root = new Node(newKey, newData, nullptr, nullptr, nullptr);
-        }
-        else
-        {
-            Node* auxPtr1 = root;
-            Node* auxPtr2 = root;
+    bool empty() const { return numNodes == 0; }
+    size_t size() const { return numNodes; }
 
-            while(auxPtr1 != nullptr)
-            {
-                auxPtr2 = auxPtr1;
-                if (newKey <= auxPtr1->key)
-                    auxPtr1 = auxPtr1->left;
-                else
-                    auxPtr1 = auxPtr1->right;
-            }
-            
-            if(newKey <= auxPtr2->key)
-                auxPtr2->left = new Node(newKey, newData, auxPtr2, nullptr, nullptr);
-            else
-                auxPtr2->right = new Node(newKey, newData, auxPtr2, nullptr, nullptr);
-        }
-        numNodes++;
-    }
+    // ==========================================
+    // GETTERS & SEARCH
+    // ==========================================
 
     D* search(const K& targetKey)
     {
@@ -246,18 +240,37 @@ public:
         return &(predNode->data);
     }
 
-    // TODO: I should add a version of these traverse functions that feeds a file stream, std::ofstream;
-    void printInOrder(const K& subtreeRootKey, std::ostream& stream = std::cout) { printInOrder(searchNode(subtreeRootKey), stream); }
+    // ==========================================
+    // MODIFIERS
+    // ==========================================
 
-    void printInOrder(std::ostream& stream = std::cout) { printInOrder(root, stream); }
+    void insert(const K& newKey, const D& newData)
+    {
+        if(numNodes == 0)
+        {
+            root = new Node(newKey, newData, nullptr, nullptr, nullptr);
+        }
+        else
+        {
+            Node* auxPtr1 = root;
+            Node* auxPtr2 = root;
 
-    void printPreOrder(const K& subtreeRootKey, std::ostream& stream = std::cout) { printPreOrder(searchNode(subtreeRootKey), stream); }
-    
-    void printPreOrder(std::ostream& stream = std::cout) { printPreOrder(root, stream); }
-
-    void printPostOrder(const K& subtreeRootKey, std::ostream& stream = std::cout) { printPostOrder(searchNode(subtreeRootKey), stream);}
-
-    void printPostOrder(std::ostream& stream = std::cout) { printPostOrder(root, stream); }
+            while(auxPtr1 != nullptr)
+            {
+                auxPtr2 = auxPtr1;
+                if (newKey <= auxPtr1->key)
+                    auxPtr1 = auxPtr1->left;
+                else
+                    auxPtr1 = auxPtr1->right;
+            }
+            
+            if(newKey <= auxPtr2->key)
+                auxPtr2->left = new Node(newKey, newData, auxPtr2, nullptr, nullptr);
+            else
+                auxPtr2->right = new Node(newKey, newData, auxPtr2, nullptr, nullptr);
+        }
+        numNodes++;
+    }
 
     void remove(const K& delKey)
     {
@@ -289,6 +302,25 @@ public:
         delete delNode;
         numNodes--;
     }
+    
+    void clear()
+    {
+        clearRecursively(root);
+        root = nullptr;
+        numNodes = 0;
+    }
 
-    bool empty() const{ return numNodes == 0; }
+    // ==========================================
+    // TRAVERSALS
+    // ==========================================
+
+    // TODO: I should add a version of these traverse functions that feeds a file stream, std::ofstream;
+    void printInOrder(const K& subtreeRootKey, std::ostream& stream = std::cout) { printInOrder(searchNode(subtreeRootKey), stream); }
+    void printInOrder(std::ostream& stream = std::cout) { printInOrder(root, stream); }
+    
+    void printPreOrder(const K& subtreeRootKey, std::ostream& stream = std::cout) { printPreOrder(searchNode(subtreeRootKey), stream); }
+    void printPreOrder(std::ostream& stream = std::cout) { printPreOrder(root, stream); }
+    
+    void printPostOrder(const K& subtreeRootKey, std::ostream& stream = std::cout) { printPostOrder(searchNode(subtreeRootKey), stream);}
+    void printPostOrder(std::ostream& stream = std::cout) { printPostOrder(root, stream); }
 };
