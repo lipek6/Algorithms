@@ -133,24 +133,9 @@ private:
             subtreeRoot2->parent = subtreeRoot1->parent;
     }
 
-    Node* searchNode(const K& targetKey)
+    void clearRecursively(Node* delNode)            // Stack Overflow retarded
     {
-        Node* auxPtr1 = root;
-        while(auxPtr1 != nullptr)
-        {
-            if(targetKey < auxPtr1->key)
-                auxPtr1 = auxPtr1->left;
-            else if(targetKey > auxPtr1->key)
-                auxPtr1 = auxPtr1->right;
-            else
-                break;
-        }
-        return auxPtr1;
-    }
-
-    Node* minimum(Node* subtreeRoot)
-    {            
-        while(subtreeRoot->left != nullptr)
+        if(delNode != nullptr)
         {
             subtreeRoot = subtreeRoot->left;
         }
