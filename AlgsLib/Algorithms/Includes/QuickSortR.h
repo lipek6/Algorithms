@@ -1,8 +1,12 @@
-#include <iostream>
+#include <cstdlib>
+#include <ctime>
 
 template <typename T>
-size_t Partition(T* array, size_t left, size_t right)
+size_t PartitionR(T* array, size_t left, size_t right)
 {
+    size_t randomIdx = left + (std::rand() % (right - left + 1));
+    std::swap(array[left], array[randomIdx]);
+    
     T pivot = array[left];
     size_t i = left;
     size_t j = right + 1;
@@ -25,37 +29,24 @@ size_t Partition(T* array, size_t left, size_t right)
 
 
 template <typename T>
-void RecursivelyQuickSort(T* array, size_t left, size_t right)
+void RecursivelyQuickSortR(T* array, size_t left, size_t right)
 {
     if(left >= right)
         return;
 
-    size_t pivot = Partition(array, left, right);
+    size_t pivot = PartitionR(array, left, right);
 
     if(pivot > 0)
-        RecursivelyQuickSort(array, left, pivot - 1);
+        RecursivelyQuickSortR(array, left, pivot - 1);
 
-    RecursivelyQuickSort(array, pivot + 1, right);
+    RecursivelyQuickSortR(array, pivot + 1, right);
 }
 
 
 template <typename T>
-void QuickSort(T* array, size_t size)
+void QuickSortR(T* array, size_t size)
 {
     if(size <= 1)
         return;
-    RecursivelyQuickSort(array, 0, size - 1);
-}
-
-
-int main(void)
-{
-    int array[9] = {54, 26, 93, 17, 77, 31, 44, 55, 20};
-    QuickSort(array, 9);
-
-    std::cout << "Sorted Array: [";
-    for(size_t i = 0; i < 8; i++) std::cout << array[i] << ", ";
-    std::cout << array[8] << "]\n";
-    
-    return 0;
+    RecursivelyQuickSortR(array, 0, size - 1);
 }

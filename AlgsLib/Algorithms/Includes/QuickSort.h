@@ -1,5 +1,3 @@
-#include <iostream>
-
 template <typename T>
 size_t Partition(T* array, size_t left, size_t right)
 {
@@ -45,17 +43,4 @@ void QuickSort(T* array, size_t size)
     if(size <= 1)
         return;
     RecursivelyQuickSort(array, 0, size - 1);
-}
-
-
-int main(void)
-{
-    int array[9] = {54, 26, 93, 17, 77, 31, 44, 55, 20};
-    QuickSort(array, 9);
-
-    std::cout << "Sorted Array: [";
-    for(size_t i = 0; i < 8; i++) std::cout << array[i] << ", ";
-    std::cout << array[8] << "]\n";
-    
-    return 0;
 }
