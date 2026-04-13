@@ -52,7 +52,7 @@ void TestSingleLinkedList()
     auto busca1 = list.find(15);
     assert(busca1.has_value() == true);
     assert(busca1.value() == 2);
-
+    
     auto busca2 = list.find(99); // Valor inexistente
     assert(busca2.has_value() == false);
 

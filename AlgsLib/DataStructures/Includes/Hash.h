@@ -1,9 +1,6 @@
-#include <iostream>
 #include <functional>
 #include <optional>
 #include <exception>
-
-// REMEMBER: I need to create a hashing function to use in the place of std::hash<K>
 
 template <typename K, typename V, typename HashFunction = std::hash<K>>
 class HashTable_Closed
@@ -185,60 +182,3 @@ public:
     }
 
 };
-
-int main(void)
-{
-    size_t numOperations; std::cin >> numOperations;
-    HashTable_Closed<std::string, size_t, std::hash<std::string>> stock;
-
-    for(size_t i = 0; i < numOperations; i++)
-    {
-        std::string operation; std::cin >> operation;
-        if(operation == "ENTRADA")
-        {
-            std::string name; size_t newAmount; std::cin >> name >> newAmount;
-            std::optional<size_t> oldAmount = stock.find(name);
-            
-            if(oldAmount.has_value())
-                stock.insert(name, oldAmount + newAmount);
-            else
-                stock.insert(name, newAmount);
-        }
-        else if(operation == "CONSUMO")
-        {
-            std::string name; size_t usedAmount; std::cin >> name >> usedAmount;
-            std::optional<size_t> oldAmount = stock.find(name);
-
-            if(!oldAmount.has_value())
-                continue;
-            
-            if(usedAmount >= oldAmount)
-                stock.remove(name);
-            else
-                stock.insert(name, oldAmount - usedAmount);
-        }
-        else if(operation == "CONSULTA")
-        {
-            std::string name; std::cin >> name;
-            std::optional<size_t> amount = stock.find(name);
-            
-            if(amount.has_value())
-                std::cout << amount << "\n";
-            else
-                std::cout << "AUSENTE\n";
-        }
-        else //if(operation == "CRITICOS")
-        {
-            size_t criticalAmount; std::cin >> criticalAmount;
-            // Find name
-            // Find amount
-            // Order
-            // Print
-
-            // Should use a auxiliary Quick sort/ Merge sort/ Heap sort
-        }
-    }
-
-
-
-}
