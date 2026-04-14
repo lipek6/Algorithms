@@ -39,8 +39,6 @@
     - Sort:     O(N log N)
     ===========================================================================
 */
-
-#include <iostream>
 #include <functional>
 #include <stdexcept>
 
@@ -114,12 +112,22 @@ public:
     // GETTERS
     // ==========================================
 
-    T& top()
+    const T& top() const
     {
         if(usedSize > 0)
             return heap[0];
         else
             throw std::out_of_range("Empty heap, there is no top element");
+    }
+
+    void print() const
+    {
+        std::cout << "[";
+        
+        for(size_t i = 0; i < usedSize - 1; i++)
+            std::cout << heap[i] << ", ";
+        
+        std::cout << heap[usedSize - 1] << "]\n";
     }
 
     // ==========================================   
@@ -148,6 +156,17 @@ public:
         
         heapifyDown(0);
         return topElement;
+    }
+
+    void topEdit(const size_t newValue)
+    {
+        if(usedSize > 0)
+        {
+            heap[0] = newValue;
+            heapifyDown(0);
+        }
+        else
+            throw std::out_of_range("Empty heap, there is no top element");
     }
 
     void buildFromArray(T* array, const size_t size)

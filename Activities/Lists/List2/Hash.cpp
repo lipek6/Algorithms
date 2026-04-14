@@ -2,9 +2,89 @@
 #include <functional>
 #include <optional>
 #include <exception>
+#include <cstdlib>
+#include <ctime>
 
-// REMEMBER: I need to create a hashing function to use in the place of std::hash<K>
+// ==========================================
+// QUICK SORT
+// ==========================================
 
+template <typename T>
+size_t PartitionR(T* array, size_t left, size_t right)
+{
+    size_t randomIdx = left + (std::rand() % (right - left + 1));
+    std::swap(array[left], array[randomIdx]);
+    
+    T pivot = array[left];
+    size_t i = left;
+    size_t j = right + 1;
+
+    while(true)
+    {
+        while(array[++i] < pivot)           // Searching for element GREATER than the pivot
+            if(i == right) break;               // Avoiding going out of bounds to the right
+        while(array[--j] > pivot)           // Searching for element SMALLER than the pivot
+            if(j == left) break;                // Avoiding going out of bounds to the left
+
+        if(i >= j)                          // When i and j crosses wach other, it's time for the final swap
+            break;
+        
+        std::swap(array[i], array[j]);      // Swap the two out of place elements
+    }
+    std::swap(array[left], array[j]);
+    return j;
+}
+
+
+template <typename T>
+void RecursivelyQuickSortR(T* array, size_t left, size_t right)
+{
+    if(left >= right)
+        return;
+
+    size_t pivot = PartitionR(array, left, right);
+
+    if(pivot > 0)
+        RecursivelyQuickSortR(array, left, pivot - 1);
+
+    RecursivelyQuickSortR(array, pivot + 1, right);
+}
+
+
+template <typename T>
+void QuickSortR(T* array, size_t size)
+{
+    if(size <= 1)
+        return;
+    RecursivelyQuickSortR(array, 0, size - 1);
+}
+
+
+
+
+
+// ==========================================
+// HASH FUNCTION
+// ==========================================
+
+struct stringHasher
+{
+    size_t operator()(const std::string& str)
+    {
+        size_t hashResult = 0;
+        for(size_t i = 0; i < str.size(); i++)
+            hashResult += str[i];
+
+        return hashResult;
+    }
+};
+
+
+
+
+// ==========================================
+// HASH TABLE
+// ==========================================
 template <typename K, typename V, typename HashFunction = std::hash<K>>
 class HashTable_Closed
 {
@@ -183,13 +263,20 @@ public:
     {
         return find(targetKey);
     }
-
 };
+
+
+
+
+
+// ==========================================
+// MAIN
+// ==========================================
 
 int main(void)
 {
     size_t numOperations; std::cin >> numOperations;
-    HashTable_Closed<std::string, size_t, std::hash<std::string>> stock;
+    HashTable_Closed<std::string, size_t, stringHasher> stock;
 
     for(size_t i = 0; i < numOperations; i++)
     {
@@ -230,12 +317,8 @@ int main(void)
         else //if(operation == "CRITICOS")
         {
             size_t criticalAmount; std::cin >> criticalAmount;
-            // Find name
-            // Find amount
-            // Order
-            // Print
 
-            // Should use a auxiliary Quick sort/ Merge sort/ Heap sort
+            stock.
         }
     }
 
