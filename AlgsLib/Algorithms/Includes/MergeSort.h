@@ -11,25 +11,16 @@ void Merge(T* array, T* auxArray, size_t left, size_t right)
     for(size_t k = left; k <= right; k++)
     {
         if(i > middle)                                  // If remains only elements on the right part 
-        {
-            array[k] = auxArray[j];
-            j++;
-        }
+            array[k] = auxArray[j++];
+        
         else if (j > right)                             // If remains only elements on the left part
-        {
-            array[k] = auxArray[i];
-            i++;
-        }
+            array[k] = auxArray[i++];
+        
         else if(auxArray[i] < auxArray[j])
-        {
-            array[k] = auxArray[i];
-            i++;
-        }
+            array[k] = auxArray[i++];
+        
         else
-        {
-            array[k] = auxArray[j];
-            j++;
-        }
+            array[k] = auxArray[j++];
     }
 }
 
