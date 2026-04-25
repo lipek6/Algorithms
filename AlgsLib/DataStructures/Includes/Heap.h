@@ -39,6 +39,7 @@
     - Sort:     O(N log N)
     ===========================================================================
 */
+#pragma once
 #include <functional>
 #include <stdexcept>
 

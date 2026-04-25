@@ -1,3 +1,4 @@
+#pragma once
 #include "BinaryTree.h"
 
 template <typename T>

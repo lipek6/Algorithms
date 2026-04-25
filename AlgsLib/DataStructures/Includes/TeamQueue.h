@@ -1,4 +1,5 @@
 // TODO LATER: Refactorize this code to create a proper TeamQueue data structure (for usage outside this question).
+#pragma once
 #include <stdexcept>
 #include <optional>
 #include <iostream>

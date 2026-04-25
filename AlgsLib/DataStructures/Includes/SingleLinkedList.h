@@ -5,7 +5,7 @@
 	~~~~~~~~~~~~~
     This code implements a single linked list that can hold any kind of data/object.
 */
-
+#pragma once
 #include <stdexcept>
 #include <optional>
 

@@ -6,7 +6,7 @@
     This code implements a stack that can hold any kind of data/object.
     It uses a single linked list as its internal implementation.
 */
-
+#pragma once
 #include "SingleLinkedList.h"
 
 template <typename T>
