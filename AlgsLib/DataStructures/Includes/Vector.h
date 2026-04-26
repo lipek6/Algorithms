@@ -1,4 +1,5 @@
 #pragma once
+#include <exception>
 
 template <typename T>
 class Vector
@@ -83,6 +84,47 @@ public:
             array[i] = array[i + 1];
                 
         usedSize--;
+    }
+
+    // Constant time remove. Changes the idx of the last element. Do not use if the order of elements is important.
+    void unorderedRemove(size_t index)
+    {
+        if(index >= usedSize) return;
+    
+        array[index] = array[usedSize - 1];
+        popBack();
+    }
+
+    T& front()
+    {
+        if(usedSize != 0)
+            return array[0]; 
+        else
+            throw std::out_of_range("Empty vector");
+    }
+    
+    const T& front() const
+    {
+        if(usedSize != 0)
+            return array[0]; 
+        else
+            throw std::out_of_range("Empty vector");
+    }
+
+    T& back()
+    {
+        if(usedSize != 0)
+            return array[usedSize - 1];
+        else
+            throw std::out_of_range("Empty vector");
+    }
+
+    const T& back() const
+    {
+        if(usedSize != 0)
+            return array[usedSize - 1];
+        else
+            throw std::out_of_range("Empty vector");
     }
 
     bool empty() const { return usedSize == 0; }

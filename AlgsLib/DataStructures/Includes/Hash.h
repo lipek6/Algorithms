@@ -48,7 +48,7 @@ private:
 
         while(table[index].state != EMPTY)
         {
-            if(table[index].state == OCCUPIED && table[index].key == newKey)
+            if(table[index].state == OCCUPIED && table[index].key == newKey) // Update value
             {
                 table[index].value = newData;
                 return;
