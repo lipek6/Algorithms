@@ -1,6 +1,7 @@
 // #pragma once
+#include "GraphsCommons.h"
 #include <iostream>
-// #include "AL.h"
+#include "AL.h"
 #include "AL_Generational.h"
 #include "../Hash.h"
 
@@ -25,18 +26,28 @@
     Will deal with directed graphs later.
 */
 
-
-
-template <typename T = int, typename W = NoWeight>
+template <typename T = int, typename W = graph_commons::NoWeight>
 class Graph
 {
 private:
-    AL_Generational<W> graph;  
+    AL<W> graph;  
     bool isDirected;
 
     HashTable_Closed<T, size_t> nodeToId;        // Need to add a custom hashing function later to satisfy the algorithms teacher
     Vector<T> idToNode;
     
+    Vector<size_t> BFSdistances;
+
+    struct Degrees
+    {
+        size_t inDegree;
+        size_t outDegree;
+
+        Degrees(const size_t inDegree = 0, const size_t outDegree = 0) : inDegree(inDegree), outDegree(outDegree) {}
+    };
+
+    Vector<Degrees> NodeDegrees;
+
 public:
     Graph(bool isDirected = false) : isDirected(isDirected) {}
 
@@ -46,22 +57,36 @@ public:
         nodeToId.insert(newNode, newId);
 
         if(newId < idToNode.size())
+        {
             idToNode[newId] = newNode;
+            NodeDegrees[newId] = {0, 0};
+        }
         else
+        {
             idToNode.pushBack(newNode);
+            NodeDegrees.pushBack({0, 0});
+        }
     }
 
     void addEdge(const T& sourceNode, const T& destinyNode, const W weight = W())
     {
-        size_t* sourceId  = nodeToId.find(sourceNode);
-        size_t* destinyId = nodeToId.find(destinyNode);
+        size_t* sourceIdPtr  = nodeToId.find(sourceNode);
+        size_t* destinyIdPtr = nodeToId.find(destinyNode);
 
-        if(sourceId != nullptr && destinyId != nullptr)
+        if(sourceIdPtr != nullptr && destinyIdPtr != nullptr)
         {
-            graph.addEdge(*sourceId, *destinyId, weight);
+            graph.addEdge(*sourceIdPtr, *destinyIdPtr, weight);
             
+            NodeDegrees[*sourceIdPtr].outDegree++;
+            NodeDegrees[*destinyIdPtr].inDegree++;
+
             if(!isDirected)
-                graph.addEdge(*destinyId, *sourceId, weight);
+            {
+                graph.addEdge(*destinyIdPtr, *sourceIdPtr, weight);
+
+                NodeDegrees[*destinyIdPtr].outDegree++;
+                NodeDegrees[*sourceIdPtr].inDegree++;
+            }
         }
     }
 
@@ -77,17 +102,75 @@ public:
 
     void removeEdge(const T& sourceNode, const T& destinyNode)
     {
-        size_t* sourceId  = nodeToId.find(sourceNode);
-        size_t* destinyId = nodeToId.find(destinyNode);
+        size_t* sourceIdPtr  = nodeToId.find(sourceNode);
+        size_t* destinyIdPtr = nodeToId.find(destinyNode);
 
-        if(sourceId != nullptr && destinyId != nullptr)
+        if(sourceIdPtr != nullptr && destinyIdPtr != nullptr)
         {
-            graph.removeEdge(*sourceId, *destinyId);
+            graph.removeEdge(*sourceIdPtr, *destinyIdPtr);
+            
+            NodeDegrees[*sourceIdPtr].outDegree--;
+            NodeDegrees[*destinyIdPtr].inDegree--;
 
             if(!isDirected)
-                graph.removeEdge(*destinyId, *sourceId);
+            {
+                graph.removeEdge(*destinyIdPtr, *sourceIdPtr);
+
+                NodeDegrees[*destinyIdPtr].outDegree--;
+                NodeDegrees[*sourceIdPtr].inDegree--;
+            }
         }           
     }
+
+    void runBFS(const T& sourceNode)
+    {
+        size_t* sourceIdx = nodeToId.find(sourceNode);
+        
+        if(sourceIdx == nullptr) return;
+
+        BFSdistances.clear();
+        for(size_t i = 0; i < graph.topology.size(); i++)
+            BFSdistances.pushBack(graph_commons::INFINITY);
+
+        graph.BFS(*sourceIdx, BFSdistances);
+    }
+
+    size_t getBFSdistanceTo(const T& destinyNode)
+    {   
+        size_t* destinyIdx = nodeToId.find(destinyNode);
+
+        if(destinyIdx == nullptr || BFSdistances.empty() || BFSdistances[*destinyIdx] == graph_commons::INFINITY)
+            return graph_commons::INFINITY;
+
+        return BFSdistances[*destinyIdx];
+    }
+
+    // void runDFS()
+
+    size_t getInDegree(const T& targetNode)
+    {
+        size_t* targetNodeIdx = nodeToId.find(targetNode);
+        
+        if(targetNodeIdx == nullptr)
+            return;
+
+        return NodeDegrees[*targetNodeIdx].inDegree;
+    }
+
+    size_t getOutDegree(const T& targetNode)
+    {
+        size_t* targetNodeIdx = nodeToId.find(targetNode);
+        
+        if(targetNodeIdx == nullptr)
+            return;
+
+        return NodeDegrees[*targetNodeIdx].outDegree;
+    }
+
+    // size_t getNumDescendents(const T& sourceNode)
+    // {
+    //     size_t* sourceNode = 
+    // }
 };
 
 

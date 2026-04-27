@@ -11,14 +11,11 @@
 
 */
 #pragma once
+#include "GraphsCommons.h"
 #include "../Vector.h"
+#include "../Queue.h"
 
-
-#ifndef NO_WEIGHT
-#define struct NoWeight {};
-#endif
-
-template <typename W = NoWeight>
+template <typename W = graph_commons::NoWeight>
 class AL
 {
     template <typename T, typename _W> friend class Graph;
@@ -30,7 +27,7 @@ private:
     Vector<bool> isActive;
     Vector<size_t> freeIds;
     size_t activeNodesCount;
-
+    
 public:
     AL() : activeNodesCount(0) {}
     ~AL() {}
@@ -85,6 +82,45 @@ public:
                 topology[sourceIdx].unorderedRemove(i);
                 break;
             }
+        }
+    }    
+
+    size_t BFS(const size_t sourceIdx, Vector<size_t>& distancesVector) 
+    {
+        Queue<size_t> queue; queue.push(sourceIdx);
+        distancesVector[sourceIdx] = 0;
+        size_t numReachedNodes = 0;
+
+        while(!queue.empty())
+        {
+            size_t currentNodeIdx = queue.front();
+            queue.pop();
+
+            for(size_t i = 0; i < topology[currentNodeIdx].size(); i++)
+            {
+                size_t neighborIdx = topology[currentNodeIdx][i].node;
+
+                if(distancesVector[neighborIdx] != graph_commons::INFINITY)
+                    continue;
+
+                distancesVector[neighborIdx] = distancesVector[currentNodeIdx] + 1;
+                queue.push(neighborIdx);
+                numReachedNodes++;
+            }
+        }
+        return numReachedNodes;
+    }
+
+    void DFS(const size_t sourceIdx, Vector<size_t>& visiteds)
+    {
+        visiteds[sourceIdx] = 0;
+
+        for(size_t i = 0; i < topology[sourceIdx].size(); i++)
+        {
+            size_t neighborIdx = topology[sourceIdx][i].node;
+
+            if(visiteds[neighborIdx] == graph_commons::INFINITY)
+                DFS(neighborIdx, visiteds);
         }
     }
 };

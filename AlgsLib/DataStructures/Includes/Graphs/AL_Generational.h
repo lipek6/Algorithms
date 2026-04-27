@@ -1,12 +1,12 @@
 #pragma once
 
 // I am connected with a node that is of the 4th generation, but our edge is of the 2th generation, that means that this edge is a ghost!
+// I shoukd thinnk about changing "size_t targetGeneration" to "uint32_t targetGeneration" later, but let's stick with it for the moment.
+#include "GraphsCommons.h"
 #include "../Vector.h"
 
 
-struct NoWeight {};
-
-template <typename W = NoWeight>
+template <typename W = graph_commons::NoWeight>
 class AL_Generational
 {
     template <typename T, typename _W> friend class Graph;

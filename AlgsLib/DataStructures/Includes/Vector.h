@@ -7,21 +7,35 @@ class Vector
 private:
     T* array;
     size_t usedSize;
-    size_t allocatedSize;
+    size_t allocatedArraySize;
     size_t RESIZE_FACTOR;
 
 public:
-    Vector(const size_t initialSize = 16, const size_t resizeFactor = 2)
-        : allocatedSize(initialSize), usedSize(0), array(new T[initialSize]), RESIZE_FACTOR(resizeFactor > 1 ? resizeFactor : 2) {}
+    Vector(const size_t initialCapacity = 16)
+        : array(new T[initialCapacity])
+        , usedSize(0)
+        , allocatedArraySize(initialCapacity)
+        , RESIZE_FACTOR(2)
+        {
+        }
+
+    Vector(const size_t count, const T& initialValue)
+        : array(new T[count * 2])
+        , usedSize(count)
+        , allocatedArraySize(count * 2)
+        , RESIZE_FACTOR(2)
+        {
+            for(size_t i = 0; i < count; i++)
+                array[i] = initialValue;
+        }
 
     ~Vector() { delete[] array; }
-
 
     // RULE OF 3: If a class uses a customized destructor, it NEEDS to have a copy constructor and a assignment operator customized for it.
     // This was fucking up the Vector<Vector<Edge>> because of double frees (the copies were just pointers being repeated and freed).
 
     // Copy constructor
-    Vector(const Vector<T>& other) : allocatedSize(other.allocatedSize), usedSize(other.usedSize), array(new T[other.allocatedSize]), RESIZE_FACTOR(other.RESIZE_FACTOR)
+    Vector(const Vector<T>& other) : allocatedArraySize(other.allocatedArraySize), usedSize(other.usedSize), array(new T[other.allocatedArraySize]), RESIZE_FACTOR(other.RESIZE_FACTOR)
     {
         for(size_t i = 0; i < other.usedSize; i++)
             this->array[i] = other.array[i];
@@ -34,10 +48,10 @@ public:
         
         delete[] this->array;
 
-        this->allocatedSize = other.allocatedSize;
-        this->usedSize      = other.usedSize;
-        this->RESIZE_FACTOR = other.RESIZE_FACTOR;
-        this->array         = new T[allocatedSize];
+        this->allocatedArraySize = other.allocatedArraySize;
+        this->usedSize           = other.usedSize;
+        this->RESIZE_FACTOR      = other.RESIZE_FACTOR;
+        this->array              = new T[allocatedArraySize];
 
         for(size_t i = 0; i < other.usedSize; i++)
             this->array[i] = other.array[i];
@@ -45,12 +59,14 @@ public:
         return *this;
     }
 
+    void SetResizeFactor(const size_t newFactor) { RESIZE_FACTOR = (newFactor > 1) ? newFactor : 2; }
+
     T& operator[](size_t index) { return array[index]; }
     const T& operator[](size_t index) const { return array[index]; }
 
     void resize(const size_t newAllocatedSize)
     {
-        if(allocatedSize >= newAllocatedSize) return;
+        if(allocatedArraySize >= newAllocatedSize) return;
         
         T* oldArray = array;
         array = new T[newAllocatedSize];
@@ -58,14 +74,15 @@ public:
         for(size_t i = 0; i < usedSize; i++)
             array[i] = oldArray[i];
 
-        allocatedSize = newAllocatedSize;
+        allocatedArraySize = newAllocatedSize;
         delete[] oldArray;
     }
 
+
     void pushBack(const T& newData)
     {
-        if(usedSize == allocatedSize)
-            resize(allocatedSize * RESIZE_FACTOR);
+        if(usedSize == allocatedArraySize)
+            resize(allocatedArraySize * RESIZE_FACTOR);
         
         array[usedSize++] = newData;
     }
@@ -129,5 +146,9 @@ public:
 
     bool empty() const { return usedSize == 0; }
     size_t size() const { return usedSize; }
+    size_t allocatedSize() const {return allocatedArraySize; }
+
+    void clear() { usedSize = 0; }
+
 };
 

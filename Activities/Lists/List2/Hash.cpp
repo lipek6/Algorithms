@@ -52,12 +52,12 @@ class Vector
 private:
     T* array;
     size_t usedSize;
-    size_t allocatedSize;
+    size_t allocatedArraySize;
     size_t RESIZE_FACTOR;
 
 public:
     Vector(const size_t initialSize = 16, const size_t resizeFactor = 2)
-        : allocatedSize(initialSize), usedSize(0), array(new T[initialSize]), RESIZE_FACTOR(resizeFactor > 1 ? resizeFactor : 2) {}
+        : allocatedArraySize(initialSize), usedSize(0), array(new T[initialSize]), RESIZE_FACTOR(resizeFactor > 1 ? resizeFactor : 2) {}
 
     ~Vector() { delete[] array; }
 
@@ -66,7 +66,7 @@ public:
 
     void resize(const size_t newAllocatedSize)
     {
-        if(allocatedSize >= newAllocatedSize) return;
+        if(allocatedArraySize >= newAllocatedSize) return;
         
         T* oldArray = array;
         array = new T[newAllocatedSize];
@@ -74,14 +74,14 @@ public:
         for(size_t i = 0; i < usedSize; i++)
             array[i] = oldArray[i];
 
-        allocatedSize = newAllocatedSize;
+        allocatedArraySize = newAllocatedSize;
         delete[] oldArray;
     }
 
     void pushBack(const T& newData)
     {
-        if(usedSize == allocatedSize)
-            resize(allocatedSize * RESIZE_FACTOR);
+        if(usedSize == allocatedArraySize)
+            resize(allocatedArraySize * RESIZE_FACTOR);
         
         array[usedSize] = newData;
         usedSize++;
