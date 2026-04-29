@@ -1,6 +1,6 @@
 // #pragma once
-#include "GraphsCommons.h"
 #include <iostream>
+#include "GraphsCommons.h"
 #include "AL.h"
 #include "AL_Generational.h"
 #include "../Hash.h"
@@ -16,7 +16,7 @@ private:
     // ==========================================
     AL<W> _graph;  
     
-    HashTable_Closed<T, size_t> _nodeToId;              // Using custom hasher just because of this question        
+    HashTable_Closed<T, size_t> _nodeToId;             
     Vector<T> _idToNode;
     Vector<size_t> _inDegrees;
 
