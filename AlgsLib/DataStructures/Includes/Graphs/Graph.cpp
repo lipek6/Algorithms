@@ -16,7 +16,7 @@ private:
     // ==========================================
     AL<W> _graph;  
     
-    HashTable_Closed<T, size_t> _nodeToId;        
+    HashTable_Closed<T, size_t> _nodeToId;              // Using custom hasher just because of this question        
     Vector<T> _idToNode;
     Vector<size_t> _inDegrees;
 
@@ -73,6 +73,8 @@ public:
     // ==========================================
     void addNode(const T& newNode = T())
     {
+        if(_nodeToId.find(newNode) != nullptr) return;
+
         invalidateCache(); 
 
         size_t newId = _graph.addNode();
@@ -146,10 +148,10 @@ public:
     // ==========================================
     // BREADTH-FIRST SEARCH (BFS)
     // ==========================================
-    void runBFS(const T& sourceNode)
+    size_t runBFS(const T& sourceNode)
     {
         size_t* sourceIdx = _nodeToId.find(sourceNode);
-        if(sourceIdx == nullptr) return;
+        if(sourceIdx == nullptr) return 0;
         
         _BFSdata.distances.clear();
         _BFSdata.traversal.clear();
@@ -167,6 +169,8 @@ public:
             _isConnected = BOOL_STATES::FALSE;
         else
             _isConnected = BOOL_STATES::TRUE;
+        
+        return numReachedNodes;
     }
 
     size_t getBFSdistanceTo(const T& destinyNode)
@@ -206,7 +210,7 @@ public:
         return _BFSdata.path;
     }
 
-    Vector<T>& getBFSTraversedPath()
+    Vector<T>& getBSTraversedPath()
     {
         _BFSdata.TraversedPath.clear();
         
@@ -220,7 +224,7 @@ public:
     // ==========================================
     // DEPTH-FIRST SEARCH (DFS)
     // ==========================================
-    void runDFS(const T& sourceNode)
+    void runDFS(const T& sourceNode)            // Change return type to size_t (num reached nodes)
     {
         size_t* sourceNodeIdx = _nodeToId.find(sourceNode);
         if(sourceNodeIdx == nullptr) return; 

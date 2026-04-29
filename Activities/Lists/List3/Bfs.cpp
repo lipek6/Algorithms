@@ -748,19 +748,27 @@ public:
 };
 
 
-
-
-
-
-
-
-size_t nameHasher(const std::string& string)
+struct stringHasher
 {
-    for(size_t i = 0; i < string.size(); i++)
+    size_t operator()(const std::string& string) const
+    {
+        size_t hash = 5381;
+        for(size_t i = 0; i < string.size(); i++)
+            hash = ((hash << 5) + hash) + static_cast<size_t>(string[i]);
+    
+        return hash;
+    }
+};
 
 
 
-}
+
+
+
+
+
+
+
 
 // ====================================================================================
 // Graph.h
@@ -775,7 +783,7 @@ private:
     // ==========================================
     AL<W> _graph;  
     
-    HashTable_Closed<T, size_t> _nodeToId;              // Using custom hasher just because of this question        
+    HashTable_Closed<T, size_t, stringHasher> _nodeToId;              // Using custom hasher just because of this question        
     Vector<T> _idToNode;
     Vector<size_t> _inDegrees;
 
@@ -1042,7 +1050,9 @@ public:
 
 
 
-
+// ====================================================================================
+// FAMILY SOLVER CLASS COOL AS FUCK
+// ====================================================================================
 class Family
 {
 private:
@@ -1095,6 +1105,8 @@ public:
         {
             case(graph_commons::INFINITY_VAL):          // Maybe on the other graph
                 break;
+            case(0):
+                return "sem parentesco";
             case(1):
                 return "filho";
             case(2):
@@ -1113,6 +1125,8 @@ public:
         {
             case(graph_commons::INFINITY_VAL):          // There really isn't a kinship
                 return "sem parentesco";
+            case(0):
+                return "sem parentesco";
             case(1):
                 return "pai";
             case(2):
@@ -1124,7 +1138,6 @@ public:
         }
         return "sem parentesco";
     }
-
 
     void printDescendants()
     {
@@ -1140,6 +1153,8 @@ public:
             switch(distance)
             {
                 case(graph_commons::INFINITY_VAL):
+                    title = "sem parentesco"; break;
+                case(0):
                     title = "sem parentesco"; break;
                 case(1):
                     title = "filho"; break;
