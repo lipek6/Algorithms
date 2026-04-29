@@ -7,6 +7,24 @@
 
 // Multigraph is not supported yet. This is the wrapper function.
 
+/*
+    CQRS (Command Query Responsibility Segregation):
+    Esse princípio diz que métodos devem ser "Commands" (mudam o estado do sistema, como `addNode`, `runBFS`)
+    OU "Queries" (retornam dados sem mudar nada, como `getCapacity`, `isDirected`). O ideal é que queries sejam
+    marcadas com `const` no final da declaração (`size_t getCapacity() const`). Tente revisar a sua interface pública do `Graph` pensando nisso!
+
+    - Start using the Named Return Value Optimization (NRVO) compiler optimization in my functions,
+    primarly on th BFS ones, so that I stop storing the type T vector with the path and the one with the TraversedPath.
+    These two are gonna be constructed directly inside the functions and be returned efficiently because of the NRVO optimization.
+    This way, we will store only the size_t arrays that are encoding the paths and use a dirty bit/memoization/caching to check if
+    we need to recalculate the path, if that is not the case, we will simply translate the size_t vector into a type T vector and return it
+    with the powers of the NRVO.  
+*/
+
+
+
+
+
 template <typename T = int, typename W = graph_commons::NoWeight>
 class Graph
 {

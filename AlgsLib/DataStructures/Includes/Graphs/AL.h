@@ -11,7 +11,7 @@ private:
     // ==========================================
     // CORE DATA STRUCTURES
     // ==========================================
-    struct Edge { size_t node; W weight; };
+    struct Edge { size_t node; W weight; };        
     Vector<Vector<Edge>> _topology;
 
     Vector<bool> _isActive;
@@ -48,11 +48,8 @@ public:
 
     void addEdge(const size_t sourceIdx, const size_t destinyIdx, const W weight = W())
     {
-        if((sourceIdx < _topology.size() && destinyIdx < _topology.size()) && 
-           (_isActive[sourceIdx] && _isActive[destinyIdx]))
-        {
+        if((sourceIdx < _topology.size() && destinyIdx < _topology.size()) && (_isActive[sourceIdx] && _isActive[destinyIdx]))
             _topology[sourceIdx].pushBack({destinyIdx, weight});
-        }
     }
 
     void removeNode(const size_t idx) 
@@ -130,15 +127,14 @@ public:
             {
                 size_t neighborIdx = _topology[currentNodeIdx][i].node;
 
-                if(distancesVector[neighborIdx] != graph_commons::INFINITY_VAL)
+                if(distancesVector[neighborIdx] != graph_commons::INFINITY_VAL)     // Shouldn't I check if this node isActive here?
                     continue;
 
+                queue.push(neighborIdx);
                 distancesVector[neighborIdx] = distancesVector[currentNodeIdx] + 1;
                 predecessorsVector[neighborIdx] = currentNodeIdx;
-                
-                queue.push(neighborIdx);
-
                 traversalVector.pushBack(neighborIdx);
+                
                 numReachedNodes++;
             }
         }

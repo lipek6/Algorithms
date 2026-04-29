@@ -1,4 +1,5 @@
 #pragma once
+#include <utility>
 #include <iostream>
 #include <exception>
 
@@ -59,6 +60,38 @@ public:
         
         return *this;
     }
+
+    // RULE OF 5: Add the move constructor and move assignment.
+    Vector(Vector<T>&& other) noexcept
+        : array(other.array)
+        , usedSize(other.usedSize)
+        , allocatedArraySize(other.allocatedArraySize)
+        , RESIZE_FACTOR(other.RESIZE_FACTOR)
+    {
+        other.array              = nullptr;           // When the other destructor is called, it won't screw with our stole array, because it doesn't know it anymore.
+        other.usedSize           = 0;                 // Golden rule for moved-from objects: They must be left in a "valid but unspecified state."
+        other.allocatedArraySize = 0;
+
+    }
+
+    Vector& operator=(Vector<T>&& other) noexcept
+    {
+        if(this == &other) return *this;
+
+        delete[] this->array;
+        this->array              = other.array;
+        this->usedSize           = other.usedSize;
+        this->RESIZE_FACTOR      = other.RESIZE_FACTOR;
+        this->allocatedArraySize = other.allocatedArraySize;
+
+        other.array               = nullptr;            // When the other destructor is called, it won't screw with our stole array, because it doesn't know it anymore.
+        other.usedSize            = 0;                  // Golden rule for moved-from objects: They must be left in a "valid but unspecified state."
+        other.allocatedArraySize  = 0;
+
+        return *this;
+    }
+
+
 
     void SetResizeFactor(const size_t newFactor) { RESIZE_FACTOR = (newFactor > 1) ? newFactor : 2; }
 
