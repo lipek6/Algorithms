@@ -1,27 +1,19 @@
-/*
-   STACK
-
-    What is this?
-	~~~~~~~~~~~~~
-    This code implements a stack that can hold any kind of data/object.
-    It uses a single linked list as its internal implementation.
-*/
 #pragma once
-#include "SingleLinkedList.h"
+#include "Vector.h"
 
 template <typename T>
 class Stack
 {
 private:
-    SingleLinkedList<T> list;
+    Vector<T> vector;
 
 public:
-    void pop() { list.pop_front(); }
-    void push(const T& newData) { list.push_front(newData); }
+    void push(const T& newData) { vector.pushBack(newData); }
+    T pop() { return vector.popBack(); }
+    
+    T& top() { return vector.back(); }
+    T& top() const { return vector.back(); }
 
-    T& top() { return list.front(); }
-    const T& top() const { return list.front(); }
-
-    size_t size() const { return list.size(); }
-    bool empty() const { return list.empty(); }
+    size_t size() const { return vector.size(); }
+    bool empty() const { return vector.empty(); }
 };

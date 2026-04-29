@@ -1,126 +1,168 @@
-/*
-    - This is a structure that will be used internally. 
-    - There will be a wrapper for it to be used in a higher level of abstraction.
-    - Directed / Undirected graphs are gonna be handled by the wrapper class.
-
-
-    I am avoiding to use a stack or queue in place of the vectors of isActive and freeIds.
-    While using a stack or queue is more logically accurate, it would create a unecessary
-    dependency. I think that avoiding using these is a better choice for a low level thing 
-    like this, so I will probably stick with it.
-
-*/
 #pragma once
 #include "GraphsCommons.h"
 #include "../Vector.h"
 #include "../Queue.h"
+#include "../Stack.h"
 
 template <typename W = graph_commons::NoWeight>
 class AL
 {
-    template <typename T, typename _W> friend class Graph;
-
 private:
+    // ==========================================
+    // CORE DATA STRUCTURES
+    // ==========================================
     struct Edge { size_t node; W weight; };
-    Vector<Vector<Edge>> topology;
+    Vector<Vector<Edge>> _topology;
 
-    Vector<bool> isActive;
-    Vector<size_t> freeIds;
-    size_t activeNodesCount;
+    Vector<bool> _isActive;
+    Vector<size_t> _freeIds;
+    size_t _activeNodesCount;
     
 public:
-    AL() : activeNodesCount(0) {}
+    // ==========================================
+    // CONSTRUCTOR & DESTRUCTOR
+    // ==========================================
+    AL() : _activeNodesCount(0) {}
     ~AL() {}
     
+    // ==========================================
+    // STRUCTURE MODIFIERS (ADD/REMOVE)
+    // ==========================================
     size_t addNode()
     {
-        if(!freeIds.empty())
+        if(!_freeIds.empty())
         {
-            size_t recycledId = freeIds.popBack();
-            isActive[recycledId] = true;
-            activeNodesCount++;
+            size_t recycledId = _freeIds.popBack();
+            _isActive[recycledId] = true;
+            _activeNodesCount++;
             return recycledId;
         }
         else
         {
-            topology.pushBack(Vector<Edge>());
-            isActive.pushBack(true);
-            activeNodesCount++;
-            return topology.size() - 1;
+            _topology.pushBack(Vector<Edge>());
+            _isActive.pushBack(true);
+            _activeNodesCount++;
+            return _topology.size() - 1;
         }
-
     }
 
     void addEdge(const size_t sourceIdx, const size_t destinyIdx, const W weight = W())
     {
-        if((sourceIdx < topology.size() && destinyIdx < topology.size()) && (isActive[sourceIdx] && isActive[destinyIdx]))
-            topology[sourceIdx].pushBack({destinyIdx, weight});
+        if((sourceIdx < _topology.size() && destinyIdx < _topology.size()) && 
+           (_isActive[sourceIdx] && _isActive[destinyIdx]))
+        {
+            _topology[sourceIdx].pushBack({destinyIdx, weight});
+        }
     }
 
     void removeNode(const size_t idx) 
     { 
-        if(idx < topology.size() && isActive[idx])
+        if(idx < _topology.size() && _isActive[idx])
         {
-            for(size_t i = 0; i < topology.size(); i++)
-                if(isActive[i] && i != idx)    
+            for(size_t i = 0; i < _topology.size(); i++)
+            {
+                if(_isActive[i] && i != idx)    
                     removeEdge(i, idx);
-            
+            }
 
-            isActive[idx] = false;
-            topology[idx] = Vector<Edge>();
-            freeIds.pushBack(idx);
-            activeNodesCount--;
+            _isActive[idx] = false;
+            _topology[idx] = Vector<Edge>();
+            _freeIds.pushBack(idx);
+            _activeNodesCount--;
         }
     }
 
     void removeEdge(const size_t sourceIdx, const size_t destinyIdx)
     {
-        for(size_t i = 0; i < topology[sourceIdx].size(); i++)
+        for(size_t i = 0; i < _topology[sourceIdx].size(); i++)
         {
-            if(topology[sourceIdx][i].node == destinyIdx)
+            if(_topology[sourceIdx][i].node == destinyIdx)
             {
-                topology[sourceIdx].unorderedRemove(i);
+                _topology[sourceIdx].unorderedRemove(i);
                 break;
             }
         }
     }    
 
-    size_t BFS(const size_t sourceIdx, Vector<size_t>& distancesVector) 
+    // ==========================================
+    // GRAPH QUERIES (GETTERS)
+    // ==========================================
+    size_t getNumNodes() const 
+    { 
+        return _activeNodesCount; 
+    }
+
+    size_t getCapacity() const 
+    { 
+        return _topology.size(); 
+    }
+
+    size_t getNumAdjacentNodes(const size_t nodeIdx) const
+    { 
+        if (nodeIdx < _topology.size() && _isActive[nodeIdx])
+            return _topology[nodeIdx].size(); 
+        return 0;
+    }
+
+    // ==========================================
+    // GRAPH ALGORITHMS
+    // ==========================================
+    size_t runBFS(const size_t sourceIdx, Vector<size_t>& distancesVector, Vector<size_t>& predecessorsVector, Vector<size_t>& traversalVector) 
     {
-        Queue<size_t> queue; queue.push(sourceIdx);
+        if (sourceIdx >= _topology.size() || !_isActive[sourceIdx]) 
+            return 0;
+
+        Queue<size_t> queue; 
+        queue.push(sourceIdx);
+        
         distancesVector[sourceIdx] = 0;
-        size_t numReachedNodes = 0;
+        predecessorsVector[sourceIdx] = sourceIdx;
+        traversalVector.pushBack(sourceIdx);
+        
+        size_t numReachedNodes = 1;
 
         while(!queue.empty())
         {
             size_t currentNodeIdx = queue.front();
             queue.pop();
 
-            for(size_t i = 0; i < topology[currentNodeIdx].size(); i++)
+            for(size_t i = 0; i < _topology[currentNodeIdx].size(); i++)
             {
-                size_t neighborIdx = topology[currentNodeIdx][i].node;
+                size_t neighborIdx = _topology[currentNodeIdx][i].node;
 
-                if(distancesVector[neighborIdx] != graph_commons::INFINITY)
+                if(distancesVector[neighborIdx] != graph_commons::INFINITY_VAL)
                     continue;
 
                 distancesVector[neighborIdx] = distancesVector[currentNodeIdx] + 1;
+                predecessorsVector[neighborIdx] = currentNodeIdx;
+                
                 queue.push(neighborIdx);
+
+                traversalVector.pushBack(neighborIdx);
                 numReachedNodes++;
             }
         }
         return numReachedNodes;
     }
 
-    void DFS(const size_t sourceIdx, Vector<size_t>& visiteds)
+    size_t runDFS(const size_t sourceIdx, Vector<size_t>& visiteds)
     {
+        if (sourceIdx >= _topology.size() || !_isActive[sourceIdx]) 
+            return 0;
+
+        size_t numReachedNodes = 1; 
         visiteds[sourceIdx] = 0;
 
-        for(size_t i = 0; i < topology[sourceIdx].size(); i++)
+        for(size_t i = 0; i < _topology[sourceIdx].size(); i++)
         {
-            size_t neighborIdx = topology[sourceIdx][i].node;
+            size_t neighborIdx = _topology[sourceIdx][i].node;
 
-            if(visiteds[neighborIdx] == graph_commons::INFINITY)
-                DFS(neighborIdx, visiteds);
+            if(visiteds[neighborIdx] == graph_commons::INFINITY_VAL)
+            {
+                numReachedNodes += runDFS(neighborIdx, visiteds); 
+            }
         }
+        
+        return numReachedNodes; 
     }
 };

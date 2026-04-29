@@ -1,4 +1,5 @@
 #pragma once
+#include <iostream>
 #include <exception>
 
 template <typename T>
@@ -142,6 +143,37 @@ public:
             return array[usedSize - 1];
         else
             throw std::out_of_range("Empty vector");
+    }
+
+    void reverse(const size_t beginIndex = 0, const size_t endIndex = size() - 1)
+    {
+        if(beginIndex >= endIndex || endIndex >= usedSize) return;
+
+        size_t i = beginIndex;
+        size_t j = endIndex;
+        
+        while(i < j)
+            std::swap(array[i++], array[j--]);
+    }
+
+    void print(std::ostream& stream = std::cout) const
+    {
+        if(usedSize == 0) return;
+
+        stream << "[";
+        for(size_t i = 0; i < usedSize - 1; i++)
+            stream << array[i] << ", ";    
+        stream << array[usedSize - 1] << "]\n";
+    }
+
+    void printReverse(std::ostream& stream = std::cout) const
+    {
+        if(usedSize == 0) return;
+        
+        stream << "[";
+        for(size_t i = usedSize - 1; i > 0; i--)
+            stream << array[i] << ", ";    
+        stream << array[0] << "]\n";
     }
 
     bool empty() const { return usedSize == 0; }

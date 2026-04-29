@@ -3,6 +3,6 @@
 
 namespace graph_commons 
 {
-    const size_t INFINITY = std::numeric_limits<size_t>::max();
+    const std::size_t INFINITY_VAL = std::numeric_limits<std::size_t>::max();
     struct NoWeight {};
 }

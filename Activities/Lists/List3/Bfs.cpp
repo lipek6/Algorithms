@@ -21,7 +21,7 @@
 // ====================================================================================
 namespace graph_commons 
 {
-    const size_t INFINITY = std::numeric_limits<size_t>::max();
+    const size_t INFINITY_VAL = std::numeric_limits<size_t>::max();
     struct NoWeight {};
 }
 
@@ -180,6 +180,37 @@ public:
             throw std::out_of_range("Empty vector");
     }
 
+    void reverse(const size_t beginIndex = 0, const size_t endIndex = size() - 1)
+    {
+        if(beginIndex >= endIndex || endIndex >= usedSize) return;
+
+        size_t i = beginIndex;
+        size_t j = endIndex;
+        
+        while(i < j)
+            std::swap(array[i++], array[j--]);
+    }
+
+    void print(std::ostream& stream = std::cout) const
+    {
+        if(usedSize == 0) return;
+
+        stream << "[";
+        for(size_t i = 0; i < usedSize - 1; i++)
+            stream << array[i] << ", ";    
+        stream << array[usedSize - 1] << "]\n";
+    }
+
+    void printReverse(std::ostream& stream = std::cout) const
+    {
+        if(usedSize == 0) return;
+        
+        stream << "[";
+        for(size_t i = usedSize - 1; i > 0; i--)
+            stream << array[i] << ", ";    
+        stream << array[0] << "]\n";
+    }
+
     bool empty() const { return usedSize == 0; }
     size_t size() const { return usedSize; }
     size_t allocatedSize() const {return allocatedArraySize; }
@@ -329,6 +360,33 @@ public:
 
 
 
+// ====================================================================================
+// Stack.h
+// ====================================================================================
+template <typename T>
+class Stack
+{
+private:
+    Vector<T> vector;
+
+public:
+    void push(const T& newData) { vector.pushBack(newData); }
+    T pop() { return vector.popBack(); }
+    
+    T& top() { return vector.back(); }
+    T& top() const { return vector.back(); }
+
+    size_t size() const { return vector.size(); }
+    bool empty() const { return vector.empty(); }
+};
+
+
+
+
+
+
+
+
 
 // ====================================================================================
 // AL.h
@@ -336,113 +394,166 @@ public:
 template <typename W = graph_commons::NoWeight>
 class AL
 {
-    template <typename T, typename _W> friend class Graph;
-
-public:
+private:
+    // ==========================================
+    // CORE DATA STRUCTURES
+    // ==========================================
     struct Edge { size_t node; W weight; };
-    Vector<Vector<Edge>> topology;
+    Vector<Vector<Edge>> _topology;
 
-    Vector<bool> isActive;
-    Vector<size_t> freeIds;
-    size_t activeNodesCount;
+    Vector<bool> _isActive;
+    Vector<size_t> _freeIds;
+    size_t _activeNodesCount;
     
 public:
-    AL() : activeNodesCount(0) {}
+    // ==========================================
+    // CONSTRUCTOR & DESTRUCTOR
+    // ==========================================
+    AL() : _activeNodesCount(0) {}
     ~AL() {}
     
+    // ==========================================
+    // STRUCTURE MODIFIERS (ADD/REMOVE)
+    // ==========================================
     size_t addNode()
     {
-        if(!freeIds.empty())
+        if(!_freeIds.empty())
         {
-            size_t recycledId = freeIds.popBack();
-            isActive[recycledId] = true;
-            activeNodesCount++;
+            size_t recycledId = _freeIds.popBack();
+            _isActive[recycledId] = true;
+            _activeNodesCount++;
             return recycledId;
         }
         else
         {
-            topology.pushBack(Vector<Edge>());
-            isActive.pushBack(true);
-            activeNodesCount++;
-            return topology.size() - 1;
+            _topology.pushBack(Vector<Edge>());
+            _isActive.pushBack(true);
+            _activeNodesCount++;
+            return _topology.size() - 1;
         }
-
     }
 
     void addEdge(const size_t sourceIdx, const size_t destinyIdx, const W weight = W())
     {
-        if((sourceIdx < topology.size() && destinyIdx < topology.size()) && (isActive[sourceIdx] && isActive[destinyIdx]))
-            topology[sourceIdx].pushBack({destinyIdx, weight});
+        if((sourceIdx < _topology.size() && destinyIdx < _topology.size()) && 
+           (_isActive[sourceIdx] && _isActive[destinyIdx]))
+        {
+            _topology[sourceIdx].pushBack({destinyIdx, weight});
+        }
     }
 
     void removeNode(const size_t idx) 
     { 
-        if(idx < topology.size() && isActive[idx])
+        if(idx < _topology.size() && _isActive[idx])
         {
-            for(size_t i = 0; i < topology.size(); i++)
-                if(isActive[i] && i != idx)    
+            for(size_t i = 0; i < _topology.size(); i++)
+            {
+                if(_isActive[i] && i != idx)    
                     removeEdge(i, idx);
-            
+            }
 
-            isActive[idx] = false;
-            topology[idx] = Vector<Edge>();
-            freeIds.pushBack(idx);
-            activeNodesCount--;
+            _isActive[idx] = false;
+            _topology[idx] = Vector<Edge>();
+            _freeIds.pushBack(idx);
+            _activeNodesCount--;
         }
     }
 
     void removeEdge(const size_t sourceIdx, const size_t destinyIdx)
     {
-        for(size_t i = 0; i < topology[sourceIdx].size(); i++)
+        for(size_t i = 0; i < _topology[sourceIdx].size(); i++)
         {
-            if(topology[sourceIdx][i].node == destinyIdx)
+            if(_topology[sourceIdx][i].node == destinyIdx)
             {
-                topology[sourceIdx].unorderedRemove(i);
+                _topology[sourceIdx].unorderedRemove(i);
                 break;
             }
         }
     }    
 
-    size_t BFS(const size_t sourceIdx, Vector<size_t>& distancesVector) 
+    // ==========================================
+    // GRAPH QUERIES (GETTERS)
+    // ==========================================
+    size_t getNumNodes() const 
+    { 
+        return _activeNodesCount; 
+    }
+
+    size_t getCapacity() const 
+    { 
+        return _topology.size(); 
+    }
+
+    size_t getNumAdjacentNodes(const size_t nodeIdx) const
+    { 
+        if (nodeIdx < _topology.size() && _isActive[nodeIdx])
+            return _topology[nodeIdx].size(); 
+        return 0;
+    }
+
+    // ==========================================
+    // GRAPH ALGORITHMS
+    // ==========================================
+    size_t runBFS(const size_t sourceIdx, Vector<size_t>& distancesVector, Vector<size_t>& predecessorsVector, Vector<size_t>& traversalVector) 
     {
-        Queue<size_t> queue; queue.push(sourceIdx);
+        if (sourceIdx >= _topology.size() || !_isActive[sourceIdx]) 
+            return 0;
+
+        Queue<size_t> queue; 
+        queue.push(sourceIdx);
+        
         distancesVector[sourceIdx] = 0;
-        size_t numReachedNodes = 0;
+        predecessorsVector[sourceIdx] = sourceIdx;
+        traversalVector.pushBack(sourceIdx);
+        
+        size_t numReachedNodes = 1;
 
         while(!queue.empty())
         {
             size_t currentNodeIdx = queue.front();
             queue.pop();
 
-            for(size_t i = 0; i < topology[currentNodeIdx].size(); i++)
+            for(size_t i = 0; i < _topology[currentNodeIdx].size(); i++)
             {
-                size_t neighborIdx = topology[currentNodeIdx][i].node;
+                size_t neighborIdx = _topology[currentNodeIdx][i].node;
 
-                if(distancesVector[neighborIdx] != graph_commons::INFINITY)
+                if(distancesVector[neighborIdx] != graph_commons::INFINITY_VAL)
                     continue;
 
                 distancesVector[neighborIdx] = distancesVector[currentNodeIdx] + 1;
+                predecessorsVector[neighborIdx] = currentNodeIdx;
+                
                 queue.push(neighborIdx);
+
+                traversalVector.pushBack(neighborIdx);
                 numReachedNodes++;
             }
         }
         return numReachedNodes;
     }
 
-
-    void DFS(const size_t sourceIdx, Vector<size_t>& visiteds)
+    size_t runDFS(const size_t sourceIdx, Vector<size_t>& visiteds)
     {
-        visiteds[sourceIdx] = 0;
-        
-        for(size_t i = 0; i < topology[sourceIdx].size(); i++)
-        {
-            size_t neighborIdx = topology[sourceIdx][i].node;
+        if (sourceIdx >= _topology.size() || !_isActive[sourceIdx]) 
+            return 0;
 
-            if(visiteds[neighborIdx] == graph_commons::INFINITY)
-                DFS(neighborIdx, visiteds);
+        size_t numReachedNodes = 1; 
+        visiteds[sourceIdx] = 0;
+
+        for(size_t i = 0; i < _topology[sourceIdx].size(); i++)
+        {
+            size_t neighborIdx = _topology[sourceIdx][i].node;
+
+            if(visiteds[neighborIdx] == graph_commons::INFINITY_VAL)
+            {
+                numReachedNodes += runDFS(neighborIdx, visiteds); 
+            }
         }
+        
+        return numReachedNodes; 
     }
 };
+
 
 
 
@@ -651,151 +762,268 @@ public:
 template <typename T = int, typename W = graph_commons::NoWeight>
 class Graph
 {
-public:
-    AL<W> graph;  
-    bool isDirected;
+    friend class Family;
+private:
+    // ==========================================
+    // INTERNAL ENGINE & CORE MAPPINGS
+    // ==========================================
+    AL<W> _graph;  
     
+    HashTable_Closed<T, size_t> _nodeToId;        
+    Vector<T> _idToNode;
+    Vector<size_t> _inDegrees;
 
-    struct Degrees
+    // ==========================================
+    // STATE & CACHE MANAGEMENT (DIRTY FLAGS)
+    // ==========================================
+    enum class BOOL_STATES { TRUE, FALSE, DEPRECATED };
+
+    bool _isSetToDirected;    
+    BOOL_STATES _isConnected; 
+    BOOL_STATES _isDirected;    
+    BOOL_STATES _hasCycle;    
+
+    void invalidateCache()
     {
-        size_t inDegree;
-        size_t outDegree;
+        _isConnected = BOOL_STATES::DEPRECATED;
+        _hasCycle = BOOL_STATES::DEPRECATED;
+    }
 
-        Degrees(const size_t inDegree = 0, const size_t outDegree = 0) : inDegree(inDegree), outDegree(outDegree) {}
+    // ==========================================
+    // ALGORITHM DATA STRUCTURES
+    // ==========================================
+    struct BFSdataStruct
+    {
+        Vector<size_t> distances;
+        Vector<size_t> traversal;
+        Vector<size_t> predecessors;
+        Vector<T> TraversedPath;
+        Vector<T> path;
     };
 
-    Vector<Degrees> NodeDegrees;
+    struct DFSdataStruct            
+    {
+        Vector<size_t> predecessors;
+        Vector<bool> visited; 
+    };
+
+    BFSdataStruct _BFSdata;
+    DFSdataStruct _DFSdata;
+
 
 public:
-    
-    // PRIVATE MEMBERS. MOVED TO PUBLIC SPACE ONLY FOR THIS QUESTION!
-    Vector<size_t> BFSdistances;
-    HashTable_Closed<T, size_t> nodeToId;        // Need to add a custom hashing function later to satisfy the algorithms teacher
-    Vector<T> idToNode;
+    // ==========================================
+    // CONSTRUCTOR
+    // ==========================================
+    Graph(bool isSetToDirected = false) 
+        : _isSetToDirected(isSetToDirected), 
+          _isConnected(BOOL_STATES::DEPRECATED),
+          _hasCycle(BOOL_STATES::DEPRECATED) {}
 
-    Graph(bool isDirected = false) : isDirected(isDirected) {}
 
+    // ==========================================
+    // CORE STRUCTURE MODIFIERS
+    // ==========================================
     void addNode(const T& newNode = T())
     {
-        size_t newId = graph.addNode();
-        nodeToId.insert(newNode, newId);
+        invalidateCache(); 
 
-        if(newId < idToNode.size())
+        size_t newId = _graph.addNode();
+        _nodeToId.insert(newNode, newId);
+
+        if(newId < _idToNode.size())
         {
-            idToNode[newId] = newNode;
-            NodeDegrees[newId] = {0, 0};
+            _idToNode[newId] = newNode;
+            _inDegrees[newId] = 0;
         }
         else
         {
-            idToNode.pushBack(newNode);
-            NodeDegrees.pushBack({0, 0});
+            _idToNode.pushBack(newNode);
+            _inDegrees.pushBack(0);
         }
     }
 
     void addEdge(const T& sourceNode, const T& destinyNode, const W weight = W())
     {
-        size_t* sourceIdPtr  = nodeToId.find(sourceNode);
-        size_t* destinyIdPtr = nodeToId.find(destinyNode);
+        size_t* sourceIdPtr  = _nodeToId.find(sourceNode);
+        size_t* destinyIdPtr = _nodeToId.find(destinyNode);
 
         if(sourceIdPtr != nullptr && destinyIdPtr != nullptr)
         {
-            graph.addEdge(*sourceIdPtr, *destinyIdPtr, weight);
-            
-            NodeDegrees[*sourceIdPtr].outDegree++;
-            NodeDegrees[*destinyIdPtr].inDegree++;
+            invalidateCache(); 
 
-            if(!isDirected)
+            _graph.addEdge(*sourceIdPtr, *destinyIdPtr, weight);            
+            _inDegrees[*destinyIdPtr]++;
+
+            if(!_isSetToDirected)
             {
-                graph.addEdge(*destinyIdPtr, *sourceIdPtr, weight);
-
-                NodeDegrees[*destinyIdPtr].outDegree++;
-                NodeDegrees[*sourceIdPtr].inDegree++;
+                _graph.addEdge(*destinyIdPtr, *sourceIdPtr, weight);
+                _inDegrees[*sourceIdPtr]++;
             }
         }
     }
 
     void removeNode(const T& node)
     {
-        size_t* idPtr = nodeToId.find(node);
+        size_t* idPtr = _nodeToId.find(node);
         if(idPtr != nullptr)
         {            
-            graph.removeNode(*idPtr);
-            nodeToId.remove(node);
+            invalidateCache(); 
+
+            _graph.removeNode(*idPtr);
+            _nodeToId.remove(node);
         }
     }
 
     void removeEdge(const T& sourceNode, const T& destinyNode)
     {
-        size_t* sourceIdPtr  = nodeToId.find(sourceNode);
-        size_t* destinyIdPtr = nodeToId.find(destinyNode);
+        size_t* sourceIdPtr  = _nodeToId.find(sourceNode);
+        size_t* destinyIdPtr = _nodeToId.find(destinyNode);
 
         if(sourceIdPtr != nullptr && destinyIdPtr != nullptr)
         {
-            graph.removeEdge(*sourceIdPtr, *destinyIdPtr);
-            
-            NodeDegrees[*sourceIdPtr].outDegree--;
-            NodeDegrees[*destinyIdPtr].inDegree--;
+            invalidateCache(); 
 
-            if(!isDirected)
+            _graph.removeEdge(*sourceIdPtr, *destinyIdPtr);
+            _inDegrees[*destinyIdPtr]--;
+
+            if(!_isSetToDirected)
             {
-                graph.removeEdge(*destinyIdPtr, *sourceIdPtr);
-
-                NodeDegrees[*destinyIdPtr].outDegree--;
-                NodeDegrees[*sourceIdPtr].inDegree--;
+                _graph.removeEdge(*destinyIdPtr, *sourceIdPtr);
+                _inDegrees[*sourceIdPtr]--;
             }
         }           
     }
 
-    // Also return the amount of reached nodes
+
+    // ==========================================
+    // BREADTH-FIRST SEARCH (BFS)
+    // ==========================================
     size_t runBFS(const T& sourceNode)
     {
-        size_t* sourceIdx = nodeToId.find(sourceNode);
-        
+        size_t* sourceIdx = _nodeToId.find(sourceNode);
         if(sourceIdx == nullptr) return 0;
+        
+        _BFSdata.distances.clear();
+        _BFSdata.traversal.clear();
+        _BFSdata.predecessors.clear();
 
-        BFSdistances.clear();
-        for(size_t i = 0; i < graph.topology.size(); i++)
-            BFSdistances.pushBack(graph_commons::INFINITY);
+        for(size_t i = 0; i < _graph.getCapacity(); i++)
+        {
+            _BFSdata.distances.pushBack(graph_commons::INFINITY_VAL);
+            _BFSdata.predecessors.pushBack(graph_commons::INFINITY_VAL);
+        }
 
-        size_t numReachedNodes = graph.BFS(*sourceIdx, BFSdistances);
+        size_t numReachedNodes = _graph.runBFS(*sourceIdx, _BFSdata.distances, _BFSdata.predecessors, _BFSdata.traversal);
 
+        if(numReachedNodes < _graph.getNumNodes()) 
+            _isConnected = BOOL_STATES::FALSE;
+        else
+            _isConnected = BOOL_STATES::TRUE;
+        
         return numReachedNodes;
     }
 
     size_t getBFSdistanceTo(const T& destinyNode)
     {   
-        size_t* destinyIdx = nodeToId.find(destinyNode);
+        size_t* destinyIdx = _nodeToId.find(destinyNode);
 
-        if(destinyIdx == nullptr || BFSdistances.empty() || BFSdistances[*destinyIdx] == graph_commons::INFINITY)
-            return graph_commons::INFINITY;
+        if(destinyIdx == nullptr || _BFSdata.distances.empty() || _BFSdata.distances[*destinyIdx] == graph_commons::INFINITY_VAL)
+            return graph_commons::INFINITY_VAL;
 
-        return BFSdistances[*destinyIdx];
+        return _BFSdata.distances[*destinyIdx];
     }
 
-    // void runDFS()
+    Vector<T>& getBFSpathTo(const T& destinyNode)
+    {
+        _BFSdata.path.clear();
 
+        size_t* destinyNodeIdx = _nodeToId.find(destinyNode);
+
+        if(destinyNodeIdx == nullptr || _BFSdata.distances[*destinyNodeIdx] == graph_commons::INFINITY_VAL)
+            return _BFSdata.path; 
+
+
+        Vector<size_t> pathIdx; pathIdx.pushBack(*destinyNodeIdx);
+        size_t currentNodeIdx = *destinyNodeIdx;
+        
+        while(_BFSdata.predecessors[currentNodeIdx] != currentNodeIdx)
+        {
+            currentNodeIdx = _BFSdata.predecessors[currentNodeIdx];
+            pathIdx.pushBack(currentNodeIdx);    
+        }
+
+        for(size_t i = pathIdx.size(); i > 0; i--)
+        {
+            _BFSdata.path.pushBack(_idToNode[pathIdx[i - 1]]);
+        }
+        
+        return _BFSdata.path;
+    }
+
+    Vector<T>& getBSTraversedPath()
+    {
+        _BFSdata.TraversedPath.clear();
+        
+        for(size_t i = 0; i < _BFSdata.traversal.size(); i++)
+        {
+            _BFSdata.TraversedPath.pushBack(_idToNode[_BFSdata.traversal[i]]);
+        }
+        return _BFSdata.TraversedPath;
+    }
+
+    // ==========================================
+    // DEPTH-FIRST SEARCH (DFS)
+    // ==========================================
+    void runDFS(const T& sourceNode)
+    {
+        size_t* sourceNodeIdx = _nodeToId.find(sourceNode);
+        if(sourceNodeIdx == nullptr) return; 
+
+        _DFSdata.visited.clear();
+        for(size_t i = 0; i < _graph.topology.size(); i++)
+        {
+            _DFSdata.visited.pushBack(false);
+        }
+
+        _graph.DFS(*sourceNodeIdx, _DFSdata.visited); 
+    }
+
+
+    // ==========================================
+    // GRAPH PROPERTIES & QUERIES
+    // ==========================================
     size_t getInDegree(const T& targetNode)
     {
-        size_t* targetNodeIdx = nodeToId.find(targetNode);
-        
-        if(targetNodeIdx == nullptr)
-            return graph_commons::INFINITY;         // Might choose a better return value here
+        size_t* targetNodeIdx = _nodeToId.find(targetNode);
+        if(targetNodeIdx == nullptr) return 0;
 
-        return NodeDegrees[*targetNodeIdx].inDegree;
+        return _inDegrees[*targetNodeIdx];
     }
 
-    size_t getOutDegree(const T& targetNode)
+    size_t getOutDegree(const T& targetNode) 
     {
-        size_t* targetNodeIdx = nodeToId.find(targetNode);
-        
-        if(targetNodeIdx == nullptr)
-            return graph_commons::INFINITY;
+        size_t* targetNodeIdx = _nodeToId.find(targetNode);
+        if(targetNodeIdx == nullptr) return 0;
 
-        return NodeDegrees[*targetNodeIdx].outDegree;
+        return _graph.getNumAdjacentNodes(*targetNodeIdx);
     }
 
-    size_t numNodes() const { return graph.activeNodesCount; }
+    bool isDirected()
+    {
+        return _isSetToDirected; // TODO, really check if it is connected, the user can _isSetToDirected = true, but the graph might be undirected if he add edges in a certain way.
+    }
 
+    bool isConnected()
+    {
+        if (_isConnected == BOOL_STATES::DEPRECATED)
+        {
+            std::cout << "Warning: Graph structure changed, please run BFS/DFS to update connectivity.\n";
+            return false; 
+        }
+
+        return _isConnected == BOOL_STATES::TRUE;
+    }
 };
 
 
@@ -806,96 +1034,150 @@ public:
 
 
 
+class Family
+{
+private:
+    Graph<std::string> _parents;
+    Graph<std::string> _childs;
+
+    std::string _patriarchName;
+    size_t _patriarchId;
+
+public:
+    void addParentChild(const std::string& parent, const std::string& child)
+    {
+        _parents.addNode(parent);
+        _parents.addNode(child);
+        _parents.addEdge(parent, child);
+
+        _childs.addNode(parent);
+        _childs.addNode(child);
+        _childs.addEdge(child, parent);
+    }
+
+    std::string& getPatriarch() 
+    {
+        size_t numPatriarchDescendants = 0;
+        size_t patriarchId = 0;
+        for(size_t i = 0; i < _parents._graph.getCapacity(); i++)
+        {
+            if(_parents._inDegrees[i] == 0)
+            {
+                size_t reachedDescendants = _parents.runBFS(_parents._idToNode[i]);
+                if(reachedDescendants > numPatriarchDescendants)
+                {
+                    numPatriarchDescendants = reachedDescendants;   
+                    patriarchId = i;
+                }
+            }
+        }
+        _patriarchId = patriarchId;
+        _patriarchName = _parents._idToNode[_patriarchId];
+        return _patriarchName;
+    }
+
+// Change parameters to A, B
+    std::string getKinship(const std::string& memberA, const std::string& memberB)
+    {
+        // 1. Go DOWN from A to see if B is a descendant
+        _parents.runBFS(memberA);
+        size_t distance = _parents.getBFSdistanceTo(memberB);
+        if (distance != graph_commons::INFINITY_VAL)
+        {
+            if (distance == 1) return "filho";
+            if (distance == 2) return "neto";
+            if (distance == 3) return "bisneto";
+            return std::to_string(distance) + "-neto";
+        }
+
+        // 2. Go UP from A to see if B is an ancestor
+        _childs.runBFS(memberA);
+        distance = _childs.getBFSdistanceTo(memberB);
+        if (distance != graph_commons::INFINITY_VAL)
+        {
+            if (distance == 1) return "pai";
+            if (distance == 2) return "avo";
+            if (distance == 3) return "bisavo";
+            return std::to_string(distance) + "-avo";
+        }
+
+        // 3. If neither, they are just relatives (or unrelated)
+        return "sem parentesco";
+    }
+
+
+    void printDescendants()
+    {
+        _parents.runBFS(_patriarchName);
+        Vector<std::string> traversedPath = _parents.getBSTraversedPath();
+        
+        for(size_t i = 1; i < traversedPath.size(); i++)
+        {
+            std::string member = traversedPath[i];
+            size_t distance = _parents.getBFSdistanceTo(member);
+
+            std::string title;
+            switch(distance)
+            {
+                case(1):
+                    title = "filho"; break;
+                case(2):
+                    title = "neto"; break;
+                case(3):
+                    title = "neto"; break;
+                default:
+                    title = std::to_string(distance) + "-neto";
+            }
+
+            std::cout << member << " " << title << "\n";
+        }    
+    }
+};
+
+
+
+
+
 int main()
 {
-    enum Relation {CHILD, PARENT};
-    Graph<std::string> graphParent(true);
-    Graph<std::string> graphChildHasParent(true);
-    
-    
-    
+    Family joseFamily;
+
+
+
     // Gather the graph data ------------------------------------------------------
     size_t numNodes, numEdges;
     std::cin >> numNodes >> numEdges;
     
-    Vector<bool> isPatriarch(numNodes, false);
-
     for(size_t i = 0; i < numEdges; i++)
     {
         std::string parent, child;
         std::cin >> parent >> child;
 
-        // Parent ---> Child
-        graphParent.addNode(parent);
-        graphParent.addNode(child);
-        graphParent.addEdge(parent, child);
-
-        graphChildHasParent.addNode(parent);
-        graphChildHasParent.addNode(child);
-        graphChildHasParent.addEdge(child, parent);
-    }
-
-    // Find patriarch ------------------------------------------------------------- 
-    
-    std::string namePatriarch = "";
-    size_t idPatriarch = 0;
-    size_t maxNumDescendants = 0;
-    for(size_t i = 0; i < numNodes; i++)
-    {
-        if (graphParent.getInDegree(graphParent.idToNode[i]) == 0)
-        {
-            size_t numDescendants = graphParent.runBFS(graphParent.idToNode[i]);
-            
-            if(numDescendants > maxNumDescendants)
-            {
-                namePatriarch = graphParent.idToNode[i];
-                maxNumDescendants = numDescendants;
-                idPatriarch = i;
-            }
-        }
-    }
-    graphParent.runBFS(namePatriarch);
-    graphChildHasParent.runBFS(namePatriarch);
-
-    for(size_t i = 0; i < graphParent.numNodes(); i++)
-    {
-        switch(graphParent.BFSdistances[i])
-        {
-            case(graph_commons::INFINITY):
-                break;
-            case(0):
-                break;
-            case(1):
-                std::cout << graphParent.idToNode[i] << " filho\n";
-                break;
-            case(2):
-                std::cout << graphParent.idToNode[i] << " neto\n";
-                break;
-            case(3):
-                std::cout << graphParent.idToNode[i] << " bisneto\n";
-                break;
-            default:
-                std::cout << graphParent.idToNode[i] << " " <<graphParent.BFSdistances[i] << "-neto\n";
-        }
+        joseFamily.addParentChild(parent, child);
     }
 
 
-    // Runs the queries on the graph ----------------------------------------------
-    /*size_t numQueries; std::cin >> numQueries;
+
+    // Find the patriarch ------------------------------------------------------
+    std::string patriarchName = joseFamily.getPatriarch();
+
+
+
+    // Print all kinships ------------------------------------------------------
+    joseFamily.printDescendants();
+
+
+
+    // Process the queries ------------------------------------------------------
+    size_t numQueries; std::cin >> numQueries;
 
     for(size_t i = 0; i < numQueries; i++)
     {
         std::string memberA, memberB;
         std::cin >> memberA >> memberB;
-    
-        // Output kinship from B in relation to A
-        = graphParent.getBFSdistanceTo(memberA);
-        = graphParent.getBFSdistanceTo(memberB);
 
+        std::cout << joseFamily.getKinship(memberA, memberB) << "\n";
     }
-    */
-
-
 }
 
 // I NEED TO IMPLEMENT THE HASHING FUNCTION MANUALLY. USE A PERSONAL HASHER!!!!!
