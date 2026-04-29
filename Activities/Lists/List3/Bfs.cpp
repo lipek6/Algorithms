@@ -757,7 +757,7 @@ public:
 size_t nameHasher(const std::string& string)
 {
     for(size_t i = 0; i < string.size(); i++)
-        
+
 
 
 }
@@ -775,7 +775,7 @@ private:
     // ==========================================
     AL<W> _graph;  
     
-    HashTable_Closed<T, size_t, nameHasher> _nodeToId;              // Using custom hasher just because of this question        
+    HashTable_Closed<T, size_t> _nodeToId;              // Using custom hasher just because of this question        
     Vector<T> _idToNode;
     Vector<size_t> _inDegrees;
 
