@@ -754,7 +754,13 @@ public:
 
 
 
+size_t nameHasher(const std::string& string)
+{
+    for(size_t i = 0; i < string.size(); i++)
+        
 
+
+}
 
 // ====================================================================================
 // Graph.h
@@ -769,7 +775,7 @@ private:
     // ==========================================
     AL<W> _graph;  
     
-    HashTable_Closed<T, size_t> _nodeToId;        
+    HashTable_Closed<T, size_t, nameHasher> _nodeToId;              // Using custom hasher just because of this question        
     Vector<T> _idToNode;
     Vector<size_t> _inDegrees;
 
@@ -826,6 +832,8 @@ public:
     // ==========================================
     void addNode(const T& newNode = T())
     {
+        if(_nodeToId.find(newNode) != nullptr) return;
+
         invalidateCache(); 
 
         size_t newId = _graph.addNode();
@@ -1034,11 +1042,12 @@ public:
 
 
 
+
 class Family
 {
 private:
-    Graph<std::string> _parents;
-    Graph<std::string> _childs;
+    Graph<std::string> _parents{true};
+    Graph<std::string> _childs{true};
 
     std::string _patriarchName;
     size_t _patriarchId;
@@ -1076,32 +1085,43 @@ public:
         return _patriarchName;
     }
 
-// Change parameters to A, B
     std::string getKinship(const std::string& memberA, const std::string& memberB)
     {
-        // 1. Go DOWN from A to see if B is a descendant
+        // Go DOWN from A to see if B is a descendant
         _parents.runBFS(memberA);
         size_t distance = _parents.getBFSdistanceTo(memberB);
-        if (distance != graph_commons::INFINITY_VAL)
-        {
-            if (distance == 1) return "filho";
-            if (distance == 2) return "neto";
-            if (distance == 3) return "bisneto";
-            return std::to_string(distance) + "-neto";
-        }
 
-        // 2. Go UP from A to see if B is an ancestor
+        switch(distance)
+        {
+            case(graph_commons::INFINITY_VAL):          // Maybe on the other graph
+                break;
+            case(1):
+                return "filho";
+            case(2):
+                return "neto";
+            case(3):
+                return "bisneto";
+            default:
+                return std::to_string(distance - 1) + "-neto";
+        }   
+
+        // Go UP from A to see if B is an ancestor
         _childs.runBFS(memberA);
         distance = _childs.getBFSdistanceTo(memberB);
-        if (distance != graph_commons::INFINITY_VAL)
-        {
-            if (distance == 1) return "pai";
-            if (distance == 2) return "avo";
-            if (distance == 3) return "bisavo";
-            return std::to_string(distance) + "-avo";
-        }
 
-        // 3. If neither, they are just relatives (or unrelated)
+        switch(distance)
+        {
+            case(graph_commons::INFINITY_VAL):          // There really isn't a kinship
+                return "sem parentesco";
+            case(1):
+                return "pai";
+            case(2):
+                return "avo";
+            case(3):
+                return "bisavo";
+            default:
+                return std::to_string(distance - 1) + "-avo";
+        }
         return "sem parentesco";
     }
 
@@ -1119,14 +1139,16 @@ public:
             std::string title;
             switch(distance)
             {
+                case(graph_commons::INFINITY_VAL):
+                    title = "sem parentesco"; break;
                 case(1):
                     title = "filho"; break;
                 case(2):
                     title = "neto"; break;
                 case(3):
-                    title = "neto"; break;
+                    title = "bisneto"; break;
                 default:
-                    title = std::to_string(distance) + "-neto";
+                    title = std::to_string(distance - 1) + "-neto";
             }
 
             std::cout << member << " " << title << "\n";
@@ -1179,5 +1201,3 @@ int main()
         std::cout << joseFamily.getKinship(memberA, memberB) << "\n";
     }
 }
-
-// I NEED TO IMPLEMENT THE HASHING FUNCTION MANUALLY. USE A PERSONAL HASHER!!!!!
