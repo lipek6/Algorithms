@@ -141,13 +141,13 @@ public:
         return numReachedNodes;
     }
 
-    size_t runDFS(const size_t sourceIdx, Vector<size_t>& visiteds)
+    size_t runDFS(const size_t sourceIdx, Vector<bool>& visiteds)
     {
         if (sourceIdx >= _topology.size() || !_isActive[sourceIdx]) 
             return 0;
 
         size_t numReachedNodes = 1; 
-        visiteds[sourceIdx] = 0;
+        visiteds[sourceIdx] = true;
 
         for(size_t i = 0; i < _topology[sourceIdx].size(); i++)
         {

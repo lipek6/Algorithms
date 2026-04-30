@@ -62,8 +62,8 @@ private:
         Vector<size_t> distances;
         Vector<size_t> traversal;
         Vector<size_t> predecessors;
-        Vector<T> TraversedPath;
-        Vector<T> path;
+        Vector<T> TraversedPath;            // To be removed later
+        Vector<T> path;                     // To be removed later
     };
 
     struct DFSdataStruct            
@@ -238,6 +238,28 @@ public:
         }
         return _BFSdata.TraversedPath;
     }
+
+    void runMultiSourceBFS(const Vector<T>& sourceNodes)            // Can be better. Probably return numReachedNodes
+    {
+        _BFSdata.distances.clear();
+        _BFSdata.traversal.clear();
+        _BFSdata.predecessors.clear();
+
+        for(size_t i = 0; i < sourceNodes.size(); i++)
+        {
+            size_t* nodeIdx = _nodeToId.find(sourceNodes[i]);
+            if(nodeIdx != nullptr)
+            {
+                runBFS(nodeIdx, _BFSdata.distances, _BFSdata.predecessors, _BFSdata.traversal);
+            }
+        }
+    }
+
+    Vector<T>& getBFSMap()
+    {
+        return _BFSdata.distances;
+    }
+
 
     // ==========================================
     // DEPTH-FIRST SEARCH (DFS)

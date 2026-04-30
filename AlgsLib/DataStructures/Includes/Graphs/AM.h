@@ -96,7 +96,7 @@ public:
 
     void removeEdge(const size_t sourceIdx, const size_t destinyIdx)
     {
-        if(sourceIdx < _gridCapacity && destinyIdx < _gridCapacity)     // HEY, hould I check if they are active? I think not, because if it's a inactive connection, I don't care how if you clean it again            
+        if(sourceIdx < _gridCapacity && destinyIdx < _gridCapacity)     // HEY, should I check if they are active? I think not, because if it's a inactive connection, I don't care how if you clean it again            
             _matrix[idx(sourceIdx, destinyIdx)] = EdgeCell();
     }
 
@@ -159,12 +159,23 @@ public:
         return numReachedNodes;
     }
 
-    size_t runDFS(const size_t sourceIdx, Vector<size_t>& visiteds)
+    size_t runDFS(const size_t sourceIdx, Vector<bool>& visiteds)
     {
-        // Will do later
-        return 0;
+        size_t numReachedNodes = 1; 
+        if(sourceIdx >= _gridCapacity || !_isActive[sourceIdx])
+            return 0;
+            
+        visiteds[sourceIdx] = true;                            // I should create a predecessors array for the DFS too
+
+        for(size_t neighborCol = 0; neighborCol < _gridCapacity; neighborCol++)
+        {
+            if(visiteds[neighborCol] == graph_commons::INFINITY_VAL)
+            {
+                numReachedNodes += runDFS(neighborCol, visiteds);
+            }
+        }
+        return numReachedNodes;
     }
 
     // Maybe add a function to check if a certain node isActive? I can't see a use for it now to be honest.
-
 };
