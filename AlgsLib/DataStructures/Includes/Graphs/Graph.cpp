@@ -2,8 +2,11 @@
 #include <iostream>
 #include "GraphsCommons.h"
 #include "AL.h"
+#include "AM.h"
 #include "AL_Generational.h"
 #include "../Hash.h"
+
+
 
 // Multigraph is not supported yet. This is the wrapper function.
 
@@ -20,10 +23,6 @@
     we need to recalculate the path, if that is not the case, we will simply translate the size_t vector into a type T vector and return it
     with the powers of the NRVO.  
 */
-
-
-
-
 
 template <typename T = int, typename W = graph_commons::NoWeight>
 class Graph
@@ -48,10 +47,11 @@ private:
     BOOL_STATES _isDirected;    
     BOOL_STATES _hasCycle;    
 
-    void invalidateCache()
+    inline void invalidateCache()
     {
         _isConnected = BOOL_STATES::DEPRECATED;
-        _hasCycle = BOOL_STATES::DEPRECATED;
+        _isDirected  = BOOL_STATES::DEPRECATED;
+        _hasCycle    = BOOL_STATES::DEPRECATED;
     }
 
     // ==========================================
@@ -59,11 +59,9 @@ private:
     // ==========================================
     struct BFSdataStruct
     {
-        Vector<size_t> distances;
-        Vector<size_t> traversal;
-        Vector<size_t> predecessors;
-        Vector<T> TraversedPath;            // To be removed later
-        Vector<T> path;                     // To be removed later
+        Vector<size_t> distances;               // Distance from each node to the source.
+        Vector<size_t> traversal;               // Nodes in the BFS layer traversal order.
+        Vector<size_t> predecessors;            // Node that first reached the current node. Useful for path reconstruction.
     };
 
     struct DFSdataStruct            
@@ -83,6 +81,7 @@ public:
     Graph(bool isSetToDirected = false) 
         : _isSetToDirected(isSetToDirected), 
           _isConnected(BOOL_STATES::DEPRECATED),
+          _isDirected(BOOL_STATES::DEPRECATED),
           _hasCycle(BOOL_STATES::DEPRECATED) {}
 
 
@@ -91,19 +90,19 @@ public:
     // ==========================================
     void addNode(const T& newNode = T())
     {
-        if(_nodeToId.find(newNode) != nullptr) return;
+        if(_nodeToId.find(newNode) != nullptr) return;      // Nodes are unique
 
         invalidateCache(); 
 
         size_t newId = _graph.addNode();
         _nodeToId.insert(newNode, newId);
 
-        if(newId < _idToNode.size())
+        if(newId < _idToNode.size())                        // Recycled idx
         {
             _idToNode[newId] = newNode;
             _inDegrees[newId] = 0;
         }
-        else
+        else                                                // New idx
         {
             _idToNode.pushBack(newNode);
             _inDegrees.pushBack(0);
@@ -168,8 +167,8 @@ public:
     // ==========================================
     size_t runBFS(const T& sourceNode)
     {
-        size_t* sourceIdx = _nodeToId.find(sourceNode);
-        if(sourceIdx == nullptr) return 0;
+        size_t* sourceIdPtr = _nodeToId.find(sourceNode);
+        if(sourceIdPtr == nullptr) return 0;
         
         _BFSdata.distances.clear();
         _BFSdata.traversal.clear();
@@ -181,7 +180,7 @@ public:
             _BFSdata.predecessors.pushBack(graph_commons::INFINITY_VAL);
         }
 
-        size_t numReachedNodes = _graph.runBFS(*sourceIdx, _BFSdata.distances, _BFSdata.predecessors, _BFSdata.traversal);
+        size_t numReachedNodes = _graph.runBFS(*sourceIdPtr, _BFSdata.distances, _BFSdata.predecessors, _BFSdata.traversal);
 
         if(numReachedNodes < _graph.getNumNodes()) 
             _isConnected = BOOL_STATES::FALSE;
@@ -191,76 +190,82 @@ public:
         return numReachedNodes;
     }
 
-    size_t getBFSdistanceTo(const T& destinyNode)
-    {   
-        size_t* destinyIdx = _nodeToId.find(destinyNode);
-
-        if(destinyIdx == nullptr || _BFSdata.distances.empty() || _BFSdata.distances[*destinyIdx] == graph_commons::INFINITY_VAL)
-            return graph_commons::INFINITY_VAL;
-
-        return _BFSdata.distances[*destinyIdx];
-    }
-
-    Vector<T>& getBFSpathTo(const T& destinyNode)
-    {
-        _BFSdata.path.clear();
-
-        size_t* destinyNodeIdx = _nodeToId.find(destinyNode);
-
-        if(destinyNodeIdx == nullptr || _BFSdata.distances[*destinyNodeIdx] == graph_commons::INFINITY_VAL)
-            return _BFSdata.path; 
-
-
-        Vector<size_t> pathIdx; pathIdx.pushBack(*destinyNodeIdx);
-        size_t currentNodeIdx = *destinyNodeIdx;
-        
-        while(_BFSdata.predecessors[currentNodeIdx] != currentNodeIdx)
-        {
-            currentNodeIdx = _BFSdata.predecessors[currentNodeIdx];
-            pathIdx.pushBack(currentNodeIdx);    
-        }
-
-        for(size_t i = pathIdx.size(); i > 0; i--)
-        {
-            _BFSdata.path.pushBack(_idToNode[pathIdx[i - 1]]);
-        }
-        
-        return _BFSdata.path;
-    }
-
-    Vector<T>& getBSTraversedPath()
-    {
-        _BFSdata.TraversedPath.clear();
-        
-        for(size_t i = 0; i < _BFSdata.traversal.size(); i++)
-        {
-            _BFSdata.TraversedPath.pushBack(_idToNode[_BFSdata.traversal[i]]);
-        }
-        return _BFSdata.TraversedPath;
-    }
-
-    void runMultiSourceBFS(const Vector<T>& sourceNodes)            // Can be better. Probably return numReachedNodes
+    size_t runBFS(const Vector<T>& sourceNodes)
     {
         _BFSdata.distances.clear();
         _BFSdata.traversal.clear();
         _BFSdata.predecessors.clear();
 
+        Vector<size_t> sourceNodesIdx(sourceNodes.size());
+
         for(size_t i = 0; i < sourceNodes.size(); i++)
         {
-            size_t* nodeIdx = _nodeToId.find(sourceNodes[i]);
-            if(nodeIdx != nullptr)
+            size_t* nodeIdPtr = _nodeToId.find(sourceNodes[i]);
+            
+            if(nodeIdPtr != nullptr)
             {
-                runBFS(nodeIdx, _BFSdata.distances, _BFSdata.predecessors, _BFSdata.traversal);
+                sourceNodesIdx.pushBack(*nodeIdPtr);
             }
         }
+
+        size_t numReachedNodes = _graph.runMultiSourceBFS(sourceNodesIdx, _BFSdata.distances, _BFSdata.predecessors, _BFSdata.traversal);
+
+        if(numReachedNodes < _graph.getNumNodes()) 
+            _isConnected = BOOL_STATES::FALSE;
+        else
+            _isConnected = BOOL_STATES::TRUE;
+
+        return numReachedNodes;
     }
 
-    Vector<T>& getBFSMap()
+    size_t getBFSdistanceTo(const T& destinyNode)
+    {   
+        size_t* destinyIdPtr = _nodeToId.find(destinyNode);
+
+        if(destinyIdPtr == nullptr || _BFSdata.distances.empty() || _BFSdata.distances[*destinyIdPtr] == graph_commons::INFINITY_VAL)
+            return graph_commons::INFINITY_VAL;
+
+        return _BFSdata.distances[*destinyIdPtr];
+    }
+
+    Vector<T> getBFSpathTo(const T& destinyNode)       // This is constructing the resultant vector on the caller function. This is the Named Return Value Optimization (NRVO) compiler optimization
     {
-        return _BFSdata.distances;
+        size_t* destinyNodeIdPtr = _nodeToId.find(destinyNode);
+
+        if(destinyNodeIdPtr == nullptr || _BFSdata.predecessors.empty() || _BFSdata.distances[*destinyNodeIdPtr] == graph_commons::INFINITY_VAL)
+            return Vector<T>();     // Is this right?
+
+
+        Vector<size_t> pathIdx; pathIdx.pushBack(*destinyNodeIdPtr);
+        size_t currentNodeIdx = *destinyNodeIdPtr;
+        
+        while(_BFSdata.predecessors[currentNodeIdx] != currentNodeIdx)      // Node that has itself as predecessor is a source node.
+        {
+            currentNodeIdx = _BFSdata.predecessors[currentNodeIdx];
+            pathIdx.pushBack(currentNodeIdx);    
+        }
+
+        Vector<size_t> path(pathIdx.size());
+        for(size_t i = pathIdx.size(); i > 0; i--)
+        {
+            path.pushBack(_idToNode[pathIdx[i - 1]]);
+        }
+        
+        return path;        // NRVO compiler optimization
     }
 
+    Vector<T> getBSTraversedPath()
+    {
+        Vector<T> taversedPath(_BFSdata.traversal.size());
+        
+        for(size_t i = 0; i < _BFSdata.traversal.size(); i++)
+        {
+            taversedPath.pushBack(_idToNode[_BFSdata.traversal[i]]);
+        }
 
+        return taversedPath;    // NRVO compiler optimization
+    }    
+    
     // ==========================================
     // DEPTH-FIRST SEARCH (DFS)
     // ==========================================
@@ -298,7 +303,7 @@ public:
         return _graph.getNumAdjacentNodes(*targetNodeIdx);
     }
 
-    bool isDirected()
+    bool isDirected() 
     {
         return _isSetToDirected; // TODO, really check if it is connected, the user can _isSetToDirected = true, but the graph might be undirected if he add edges in a certain way.
     }

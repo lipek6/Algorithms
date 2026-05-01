@@ -124,18 +124,32 @@ public:
         return numAdjacentNodes;
     }
 
-    size_t runBFS(const size_t sourceIdx, Vector<size_t>& distancesVector, Vector<size_t>& predecessorsVector, Vector<size_t>& traversalVector) 
+    size_t runBFS(const size_t sourceIdx, Vector<size_t>& distancesVector, Vector<size_t>& predecessorsVector, Vector<size_t>& traversalVector)
     {
-        if(sourceIdx >= _gridCapacity || !_isActive[sourceIdx])
-            return 0;
+        Vector<size_t> singleSource(1, sourceIdx);
+        return runMultiSourceBFS(singleSource, distancesVector, predecessorsVector, traversalVector);
+    }
 
+    size_t runMultiSourceBFS(Vector<size_t> sourcesIdxVector, Vector<size_t>& distancesVector, Vector<size_t>& predecessorsVector, Vector<size_t>& traversalVector) 
+    {
         Queue<size_t> queue;
-        queue.push(sourceIdx);
-        
-        distancesVector[sourceIdx] = 0;
-        predecessorsVector[sourceIdx] = sourceIdx;
-        traversalVector.pushBack(sourceIdx);
+        for(size_t i = 0; i < sourcesIdxVector.size(); i++)
+        {
+            size_t sourceIdx = sourcesIdxVector[i];
 
+            if(sourceIdx < _topology.size() && _isActive[sourceIdx])
+            {
+                if(distancesVector[sourceIdx] == graph_commons::INFINITY_VAL)     // Uniqueness of the sources
+                {
+                    queue.push(sourcesIdxVector[i]);
+                    distancesVector[sourceIdx] = 0;
+                    predecessorsVector[sourceIdx] = sourceIdx;
+                    traversalVector.pushBack(sourceIdx);
+                    numReachedNodes++;
+                }
+            }   
+        }
+        
         size_t numReachedNodes = 1;
 
         while(!queue.empty())
