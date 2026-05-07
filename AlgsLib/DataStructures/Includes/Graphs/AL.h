@@ -3,6 +3,7 @@
 #include "../Vector.h"
 #include "../Queue.h"
 #include "../Stack.h"
+#include "../Heap.h"
 
 template <typename W = graph_commons::NoWeight>
 class AL
@@ -11,7 +12,16 @@ private:
     // ==========================================
     // CORE DATA STRUCTURES
     // ==========================================
-    struct Edge { size_t node; W weight; };        
+    struct Edge
+    {
+        size_t node;
+        W weight;
+
+        bool operator< (const Edge& other) { return this->weight <  other.weight; }
+        bool operator<=(const Edge& other) { return this->weight <= other.weight; }
+        bool operator> (const Edge& other) { return this->weight >  other.weight; }
+        bool operator>=(const Edge& other) { return this->weight >= other.weight; }
+    };        
     Vector<Vector<Edge>> _topology;
 
     Vector<bool> _isActive;
@@ -174,5 +184,43 @@ public:
         }
         
         return numReachedNodes; 
+    }
+
+    void runDijkstra(const size_t sourceIdx, Vector<size_t>& distancesVector, Vector<size_t>& predecessorsVector, Vector<size_t>& traversalVector)
+    {
+        if (sourceIdx >= _topology.size() || !_isActive[sourceIdx]) 
+            return;
+
+        Heap<Edge> minHeap;                             // I should take a look at fibonacci heap later
+        minHeap.insert({sourceIdx, 0});
+
+        distancesVector[sourceIdx]    = 0;
+        predecessorsVector[sourceIdx] = sourceIdx;
+
+        while(!minHeap.empty())
+        {
+            Edge current = minHeap.pop();
+            
+            if(current.weight > distancesVector[current.node])
+                continue;
+            
+            traversalVector.pushBack(current.node);
+
+            for(size_t i = 0; i < _topology[current.node].size(); i++)
+            {
+                Edge neighbor = _topology[current.node][i];
+                
+                size_t newWeight = current.weight + neighbor.weight;
+                size_t oldWeight = distancesVector[neighbor.node];
+
+                if(newWeight < oldWeight)
+                {
+                    distancesVector[neighbor.node]    = newWeight;
+                    predecessorsVector[neighbor.node] = current.node;
+                    
+                    minHeap.insert({neighbor.node, newWeight});
+                }
+            }
+        }
     }
 };

@@ -70,9 +70,17 @@ private:
         Vector<bool> visited; 
     };
 
-    BFSdataStruct _BFSdata;
-    DFSdataStruct _DFSdata;
+    struct dijkstraDataStruct
+    {
+        Vector<size_t> distances;               // Distance with weight from each node to the source.
+        Vector<size_t> traversal;               // Nodes ordered from closest to furthest.
+        Vector<size_t> predecessors;            // Node that better reached the current node. Useful for path reconstruction.
+    };
 
+
+    BFSdataStruct      _BFSdata;
+    DFSdataStruct      _DFSdata;
+    dijkstraDataStruct _dijkstraData;
 
 public:
     // ==========================================
@@ -222,7 +230,7 @@ public:
     {   
         size_t* destinyIdPtr = _nodeToId.find(destinyNode);
 
-        if(destinyIdPtr == nullptr || _BFSdata.distances.empty() || _BFSdata.distances[*destinyIdPtr] == graph_commons::INFINITY_VAL)
+        if(destinyIdPtr == nullptr || _BFSdata.distances.empty())
             return graph_commons::INFINITY_VAL;
 
         return _BFSdata.distances[*destinyIdPtr];
@@ -232,8 +240,8 @@ public:
     {
         size_t* destinyNodeIdPtr = _nodeToId.find(destinyNode);
 
-        if(destinyNodeIdPtr == nullptr || _BFSdata.predecessors.empty() || _BFSdata.distances[*destinyNodeIdPtr] == graph_commons::INFINITY_VAL)
-            return Vector<T>();     // Is this right?
+        if(destinyNodeIdPtr == nullptr || _BFSdata.predecessors.empty())
+            return Vector<T>();     
 
 
         Vector<size_t> pathIdx; pathIdx.pushBack(*destinyNodeIdPtr);
@@ -283,6 +291,67 @@ public:
         _graph.DFS(*sourceNodeIdx, _DFSdata.visited); 
     }
 
+
+    // ==========================================
+    // DIJKSTRA
+    // ==========================================
+    void runDijkstra(const T& sourceNode)
+    {
+        size_t sourceIdxPtr = _nodeToId.find(sourceNode);
+        
+        if(sourceIdxPtr == nullptr)
+            return;
+
+        _dijkstraData.distances.clear();
+        _dijkstraData.predecessors.clear();
+        _dijkstraData.traversal.clear();
+
+        for(size_t i = 0; i < _graph.getCapacity(); i++)
+        {
+            _dijkstraData.distances.pushBack(graph_commons::INFINITY_VAL);
+            _dijkstraData.predecessors.pushBack(graph_commons::INFINITY_VAL);
+        }
+
+
+        _graph.runDijkstra(*sourceIdxPtr, _dijkstraData.distances, _dijkstraData.predecessors, _dijkstraData.traversal);
+    }
+
+    size_t getDijkstraDistanceTo(const T& destinyNode)
+    {
+        size_t destinyIdxPtr = _nodeToId.find(destinyNode);
+        
+        if(destinyIdxPtr == nullptr || _dijkstraData.distances.empty())
+            return graph_commons::INFINITY_VAL;
+
+        return _dijkstraData.distances[*destinyIdxPtr];
+    }
+
+    Vector<T> getDijkstraPathTo(const T& destinyNode)
+    {
+        size_t destinyIdxPtr = _nodeToId.find(destinyNode);        
+        
+        if(destinyIdxPtr == nullptr || _dijkstraData.distances.empty())
+            return Vector<T>();
+
+
+        size_t currentNode = *destinyIdxPtr;
+        Vector<size_t> pathIdx; pathIdx.pushBack(currentNode);
+
+        while(_dijkstraData.predecessors[currentNode] != currentNode)
+        {
+            currentNode = _dijkstraData.predecessors[currentNode];
+            pathIdx.pushBack(currentNode);
+        }
+
+
+        Vector<T> path(pathIdx.size());
+
+        for(size_t i = pathIdx.size(); i > 0; i--)
+        {
+            path.pushBack(_idToNode[pathIdx[i - 1]]);
+        }
+        return path;
+    }
 
     // ==========================================
     // GRAPH PROPERTIES & QUERIES
