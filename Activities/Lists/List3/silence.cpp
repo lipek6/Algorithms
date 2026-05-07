@@ -387,8 +387,8 @@ public:
 
 
 
+struct Edge { size_t node; graph_commons::NoWeight weight; };
 
-struct Edge { size_t node; W weight; };
 // ====================================================================================
 // AL.h
 // ====================================================================================
@@ -404,12 +404,13 @@ private:
     Vector<bool> _isActive;
     Vector<size_t> _freeIds;
     size_t _activeNodesCount;
+    size_t _maxDistance;
     
 public:
     // ==========================================
     // CONSTRUCTOR & DESTRUCTOR
     // ==========================================
-    AL() : _activeNodesCount(0) {}
+    AL() : _activeNodesCount(0), _maxDistance(0) {}
     ~AL() {}
     
     // ==========================================
@@ -495,6 +496,8 @@ public:
     {
         if(nodeIdx < _topology.size() && _isActive[nodeIdx])
             return _topology[nodeIdx];
+
+        throw std::out_of_range("Bruh");
     }
 
     // ==========================================
@@ -513,6 +516,7 @@ public:
         traversalVector.pushBack(sourceIdx);
         
         size_t numReachedNodes = 1;
+        _maxDistance = 0;
 
         while(!queue.empty())
         {
@@ -533,10 +537,13 @@ public:
 
                 traversalVector.pushBack(neighborIdx);
                 numReachedNodes++;
+                _maxDistance = std::max(_maxDistance, distancesVector[neighborIdx]);
             }
         }
         return numReachedNodes;
     }
+
+    size_t getMaxDistance() { return _maxDistance; }
 
     size_t runDFS(const size_t sourceIdx, Vector<size_t>& visiteds)
     {
@@ -564,24 +571,25 @@ public:
 
 
 
-
-
 int main(void)
 {
     size_t numPeople; std::cin >> numPeople;
 
-
     Vector<long long> influence(numPeople + 1, 0);
     
-    for(size_t i = 1; i <= numPeople; i++)
-        std::cin >> influence[i];
-    
-
     AL tree;
-
+    
+    for(size_t i = 1; i <= numPeople; i++)
+    {
+        std::cin >> influence[i];
+        tree.addNode();
+    }
+    tree.addNode();
+    
 
     for(size_t i = 0; i < numPeople - 1; i++)
     {
+        size_t boss, subordinate;
         std::cin >> boss >> subordinate;
         tree.addEdge(boss, subordinate);
         tree.addEdge(subordinate, boss);
@@ -593,4 +601,29 @@ int main(void)
     tree.runBFS(1, distances, predecessors, traversal);
 
 
+    Vector<long long> dp_get (numPeople + 1, 0);   
+    Vector<long long> dp_pass(numPeople + 1, 0);
+
+    for(size_t i = traversal.size(); i > 0; i--)
+    {
+        size_t currentNode = traversal[i - 1];
+        dp_get [currentNode] = influence[currentNode];
+        dp_pass[currentNode] = 0;
+
+        Vector<Edge> neighbors = tree.getNeighbors(currentNode);
+        
+        for(size_t j = 0; j < neighbors.size(); j++)
+        {
+            size_t neighbor = neighbors[j].node;
+
+            if(predecessors[currentNode] != neighbor)
+            {
+                dp_get [currentNode] += dp_pass[neighbor];
+                dp_pass[currentNode] += std::max(dp_get[neighbor], dp_pass[neighbor]);
+            }
+        }
+    }
+
+    long long bestInfluence = std::max(0LL, std::max(dp_get[1], dp_pass[1]));
+    std::cout << bestInfluence << "\n";
 }
