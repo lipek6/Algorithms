@@ -274,6 +274,7 @@ public:
         return taversedPath;    // NRVO compiler optimization
     }    
     
+
     // ==========================================
     // DEPTH-FIRST SEARCH (DFS)
     // ==========================================
@@ -352,6 +353,37 @@ public:
         }
         return path;
     }
+
+
+    // ==========================================
+    // BELLMAN-FORD
+    // ==========================================
+    void runBellmanFord(const T& sourceNode)
+    {
+
+    }
+
+    size_t getBellmanFordDistanceTo(const T& destinyNode)
+    {
+
+    }
+
+    Vector<T> getBellmanFordPathTo(const T& destinyNode)
+    {
+
+    }
+
+    Vector<T> getBellmanFordNegativeCycle()
+    {
+        
+    }
+
+    bool checkBellmanFordNegativeCycle()
+    {
+
+    }
+
+
 
     // ==========================================
     // GRAPH PROPERTIES & QUERIES
