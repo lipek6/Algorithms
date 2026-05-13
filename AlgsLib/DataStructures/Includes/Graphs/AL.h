@@ -17,10 +17,10 @@ private:
         size_t node;
         W weight;
 
-        bool operator< (const Edge& other) { return this->weight <  other.weight; }
-        bool operator<=(const Edge& other) { return this->weight <= other.weight; }
-        bool operator> (const Edge& other) { return this->weight >  other.weight; }
-        bool operator>=(const Edge& other) { return this->weight >= other.weight; }
+        bool operator< (const Edge& other) const { return this->weight <  other.weight; }
+        bool operator<=(const Edge& other) const { return this->weight <= other.weight; }
+        bool operator> (const Edge& other) const { return this->weight >  other.weight; }
+        bool operator>=(const Edge& other) const { return this->weight >= other.weight; }
     };        
     Vector<Vector<Edge>> _topology;
 
@@ -191,7 +191,7 @@ public:
         if (sourceIdx >= _topology.size() || !_isActive[sourceIdx]) 
             return;
 
-        Heap<Edge> minHeap;                             // I should take a look at fibonacci heap later
+        Heap<Edge> minHeap;
         minHeap.insert({sourceIdx, 0});
 
         distancesVector[sourceIdx]    = 0;
