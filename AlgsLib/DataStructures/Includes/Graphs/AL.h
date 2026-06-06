@@ -27,6 +27,23 @@ private:
     Vector<bool> _isActive;
     Vector<size_t> _freeIds;
     size_t _activeNodesCount;
+
+    
+    void toposortRecursion(const size_t currentIdx, Stack<size_t>& stack, Vector<bool>& visiteds) 
+    {
+        visiteds[currentIdx] = true;
+
+        for (size_t i = 0; i < _topology[currentIdx].size(); i++)
+        {
+            size_t neighborIdx = _topology[currentIdx][i].node;
+
+            if(visiteds[neighborIdx] == false && _isActive[neighborIdx])
+                toposortRecursion(neighborIdx, stack, visiteds);
+        }
+
+        stack.push(currentIdx);
+    }
+
     
 public:
     // ==========================================
@@ -222,5 +239,27 @@ public:
                 }
             }
         }
+    }
+
+    void toposort(const size_t sourceIdx, const bool visitAll, Vector<size_t>& topologicallySortedVector)
+    {
+        if(!_isActive[sourceIdx])
+            return;
+
+        Stack<size_t> stack;
+        Vector<bool> visiteds(_topology.size(), false);
+
+        toposortRecursion(sourceIdx, stack, visiteds);
+
+        if(visitAll)
+        {
+            for(size_t i = 0; i < visiteds.size(); i++)
+            {
+                if(!visiteds[i] && _isActive[i])
+                    toposortRecursion(i, stack, visiteds);
+            }
+        }
+        while(!stack.empty())
+            topologicallySortedVector.pushBack(stack.pop());
     }
 };

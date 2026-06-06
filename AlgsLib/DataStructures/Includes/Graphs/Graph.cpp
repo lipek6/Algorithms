@@ -2,8 +2,6 @@
 #include <iostream>
 #include "GraphsCommons.h"
 #include "AL.h"
-#include "AM.h"
-#include "AL_Generational.h"
 #include "../Hash.h"
 
 
@@ -426,7 +424,7 @@ public:
 
 int main()
 {
-    Graph<std::string, int> G(false);
+    /* Graph<std::string, int> G(false);
     
     std::string Recife = "Recife";
     std::string Olinda = "Olinda";
@@ -448,4 +446,40 @@ int main()
     G.runBFS(Recife);
     std::cout << "There are " << G.getBFSdistanceTo(Camaragibe) << "Roads From Recife to Camaragibe\n";
     G.getBFSpathTo(Camaragibe).print();
+
+    */
+   
+   AL graph;
+   size_t num_nodes = 15;
+
+    for(size_t i = 0; i < num_nodes; i++)
+        graph.addNode();
+
+    // EDGES:
+    graph.addEdge(0, 1);
+    graph.addEdge(0, 2);
+    graph.addEdge(0, 3);
+    graph.addEdge(1, 4);
+    graph.addEdge(1, 5);
+    graph.addEdge(4, 7);
+    graph.addEdge(7, 9);
+    graph.addEdge(5, 7);
+    graph.addEdge(5, 8);
+    graph.addEdge(8, 9);
+    graph.addEdge(2, 5);
+    graph.addEdge(2, 6);
+    graph.addEdge(6, 8);
+    graph.addEdge(3, 6);
+
+
+    Vector<size_t> topologically_sorted_vector;
+    graph.toposort(0, true, topologically_sorted_vector);
+
+
+    std::cout << "Topological order:" << std::endl;
+    
+    for(size_t node : topologically_sorted_vector)
+        std::cout << node << "  ";
+    
+    std::cout << std::endl;
 }
