@@ -1,9 +1,9 @@
-#pragma once
 #include <utility>
 #include <iostream>
 #include <exception>
 #include <cstdlib>
 #include <ctime>
+
 
 template <typename T>
 class Vector
@@ -14,53 +14,50 @@ private:
     size_t allocatedArraySize;
     size_t RESIZE_FACTOR;
 
-    struct QuickSort
+    size_t PartitionR(T* array, size_t left, size_t right)
     {
-        size_t PartitionR(T* array, size_t left, size_t right)
+        size_t randomIdx = left + (std::rand() % (right - left + 1));
+        std::swap(array[left], array[randomIdx]);
+
+        T pivot = array[left];
+        size_t i = left;
+        size_t j = right + 1;
+
+        while(true)
         {
-            size_t randomIdx = left + (std::rand() % (right - left + 1));
-            std::swap(array[left], array[randomIdx]);
+            while(array[++i] < pivot)           // Searching for element GREATER than the pivot
+                if(i == right) break;               // Avoiding going out of bounds to the right
+            while(array[--j] > pivot)           // Searching for element SMALLER than the pivot
+                if(j == left) break;                // Avoiding going out of bounds to the left
 
-            T pivot = array[left];
-            size_t i = left;
-            size_t j = right + 1;
+            if(i >= j)                          // When i and j crosses wach other, it's time for the final swap
+                break;
 
-            while(true)
-            {
-                while(array[++i] < pivot)           // Searching for element GREATER than the pivot
-                    if(i == right) break;               // Avoiding going out of bounds to the right
-                while(array[--j] > pivot)           // Searching for element SMALLER than the pivot
-                    if(j == left) break;                // Avoiding going out of bounds to the left
-
-                if(i >= j)                          // When i and j crosses wach other, it's time for the final swap
-                    break;
-
-                std::swap(array[i], array[j]);      // Swap the two out of place elements
-            }
-            std::swap(array[left], array[j]);
-            return j;
+            std::swap(array[i], array[j]);      // Swap the two out of place elements
         }
+        std::swap(array[left], array[j]);
+        return j;
+    }
 
-        void RecursivelyQuickSortR(T* array, size_t left, size_t right)
-        {
-            if(left >= right)
-                return;
+    void RecursivelyQuickSortR(T* array, size_t left, size_t right)
+    {
+        if(left >= right)
+            return;
 
-            size_t pivot = PartitionR(array, left, right);
+        size_t pivot = PartitionR(array, left, right);
 
-            if(pivot > 0)
-                RecursivelyQuickSortR(array, left, pivot - 1);
+        if(pivot > 0)
+            RecursivelyQuickSortR(array, left, pivot - 1);
 
-            RecursivelyQuickSortR(array, pivot + 1, right);
-        }
+        RecursivelyQuickSortR(array, pivot + 1, right);
+    }
 
-        void QuickSortR(T* array, size_t size)
-        {
-            if(size <= 1)
-                return;
-            RecursivelyQuickSortR(array, 0, size - 1);
-        }
-    };
+    void QuickSortR(T* array, size_t size)
+    {
+        if(size <= 1)
+            return;
+        RecursivelyQuickSortR(array, 0, size - 1);
+    }
 
 public:
     Vector(const size_t initialCapacity = 16)
@@ -267,7 +264,98 @@ public:
 
     void sort()
     {
-        QuickSort::QuickSortR(array, usedSize);
+        QuickSortR(array, usedSize);
     }
 
 };
+
+
+
+// CODE ---------------------------------------------------------------------------------------------------------------------------------------------
+struct Event {
+    long long start;
+    long long end;
+    long long value;
+    bool is_valid = true;
+
+    // Ordenação principal: Menor tempo de término primeiro
+    bool operator<(const Event& other) const { return this->end < other.end; }
+    bool operator>(const Event& other) const { return this->end > other.end; }
+};
+
+int main() {
+
+    size_t num_events, num_incompatible_pairs;
+    std::cin >> num_events >> num_incompatible_pairs;
+
+    Vector<Event> events(num_events);
+
+    for(size_t i = 0; i < num_events; i++) 
+    {
+        long long start, end, value; std::cin >> start >> end >> value;
+        events.pushBack({start, end, value, true});
+    }
+
+    size_t num_cancelled_events = 0;
+    for(size_t pair = 0; pair < num_incompatible_pairs; pair++)
+    {
+        size_t u, v; std::cin >> u >> v;
+        u--; 
+        v--;
+
+        if (events[u].is_valid && events[v].is_valid)
+        {
+            events[u].is_valid = false;
+            events[v].is_valid = false;
+            num_cancelled_events += 2;
+        }
+    }
+
+    Vector<Event> valid_events(num_events); 
+
+    for(size_t i = 0; i < events.size(); i++)
+        if(events[i].is_valid)
+            valid_events.pushBack(events[i]);
+    
+
+    valid_events.sort();
+
+    if (!valid_events.size())
+    {
+        std::cout << num_cancelled_events << " 0\n";
+        return 0;
+    }
+
+    Vector<long long> dp(valid_events.size(), 0);
+    dp[0] = valid_events[0].value;
+
+    for (size_t i = 1; i < valid_events.size(); i++)
+    {
+        long long skip = dp[i - 1];
+        long long pick = valid_events[i].value;
+        long long left = 0;
+        long long right = i - 1;
+        long long last_compatible = -1;
+
+        while (left <= right)
+        {
+            long long mid = left + (right - left) / 2;
+            if (valid_events[mid].end <= valid_events[i].start)
+            {
+                last_compatible = mid; 
+                left = mid + 1;        
+            }
+            else
+            {
+                right = mid - 1;       
+            }
+        }
+
+        if (last_compatible != -1)
+            pick += dp[last_compatible];
+        
+
+        dp[i] = std::max(skip, pick);
+    }
+    std::cout << num_cancelled_events << " " << dp[valid_events.size() - 1] << "\n";
+}
