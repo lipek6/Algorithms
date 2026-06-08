@@ -321,3 +321,102 @@ public:
     }
 
 };
+
+
+struct Item
+{
+    long long weight;
+    long long value;
+    size_t original_index;
+
+    bool operator<(const Item other) const
+    {
+        long long lhs = this->value * other.weight;
+        long long rhs = other.value * this->weight;
+        if (lhs != rhs) return lhs < rhs;
+        
+        return this->original_index > other.original_index; 
+    }
+
+    bool operator>(const Item other) const
+    {
+        long long lhs = this->value * other.weight;
+        long long rhs = other.value * this->weight;
+        if (lhs != rhs) return lhs > rhs;
+        
+        return this->original_index < other.original_index; 
+    }
+};
+
+
+size_t row_size;
+inline size_t idx(const size_t row, const size_t col) { return col + (row * row_size); }
+
+// CODE ---------------------------------------------------------------------------------------------------------------------------------------------
+int main()
+{
+    std::ios_base::sync_with_stdio(false);
+    std::cin.tie(NULL);
+
+    size_t items_amount;
+    long long capacity;
+    if (!(std::cin >> items_amount >> capacity)) return 0;
+        
+    long long max_single_item_value = 0;
+    Vector<Item> items_available(items_amount, {0, 0, 0});
+
+    for(size_t i = 0; i < items_amount; i++)
+    {
+        long long weight;
+        long long value;
+        std::cin >> weight >> value;
+
+        items_available[i] = {weight, value, i};
+
+        if(weight <= capacity && value > max_single_item_value)
+            max_single_item_value = value;
+    }
+
+
+    // DP -------------------------------------------------------------------------
+    long long dp_result = 0;
+
+    Vector<long long> dp_table(capacity + 1, 0); 
+
+    for(size_t i = 0; i < items_amount; i++)
+    {
+        Item current_item = items_available[i];
+        
+        for(long long w = capacity; w >= current_item.weight; w--)
+        {
+            long long include_val = dp_table[w - current_item.weight] + current_item.value;
+            long long exclude_val = dp_table[w];
+
+            dp_table[w] = std::max(include_val, exclude_val);
+        }
+    }
+    dp_result = dp_table.back();
+
+    // GREEDY --------------------------------------------------------------------------------------------------------
+    long long greedy_result = 0;
+    long long available_capacity = capacity;
+    
+    items_available.sort(false);
+    for(size_t i = 0; i < items_amount; i++)
+    {
+        Item current_item = items_available[i];
+
+        if(current_item.weight <= available_capacity)
+        {
+            greedy_result += current_item.value;
+            available_capacity -= current_item.weight;
+        }
+    }
+    greedy_result = std::max(greedy_result, max_single_item_value);
+
+
+    // RESULTS -------------------------------------------------------------------------------------------------------
+    std::cout << dp_result << " " << greedy_result << "\n";
+    
+    return 0;
+}
